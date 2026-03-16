@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { calendarApi } from '../../api/api';
 import './TeamCalendar.css';
 
@@ -63,13 +63,11 @@ const TeamCalendar = () => {
     const startDayOfWeek = firstDay.getDay();
 
     const days = [];
-    
-    // Add empty cells for days before the first of the month
+
     for (let i = 0; i < (startDayOfWeek === 0 ? 6 : startDayOfWeek - 1); i++) {
       days.push(null);
     }
 
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
@@ -79,7 +77,7 @@ const TeamCalendar = () => {
 
   const getEventsForDay = (date) => {
     if (!calendarData || !date) return [];
-    
+
     return calendarData.events.filter(event => {
       const eventStart = new Date(event.start);
       const eventEnd = new Date(event.end);
@@ -97,10 +95,31 @@ const TeamCalendar = () => {
                       'Juuli', 'August', 'September', 'Oktoober', 'November', 'Detsember'];
   const weekDays = ['E', 'T', 'K', 'N', 'R', 'L', 'P'];
 
+  const maxAbsence = useMemo(() => {
+    if (!calendarData?.dailyAbsenceCount) return 0;
+    return Math.max(0, ...Object.values(calendarData.dailyAbsenceCount));
+  }, [calendarData]);
+
+  const upcomingEvents = useMemo(() => {
+    if (!calendarData?.events) return [];
+    const now = new Date();
+    const unique = new Map();
+
+    calendarData.events.forEach(event => {
+      const key = `${event.userName}-${event.start}-${event.end}-${event.leaveType}`;
+      if (!unique.has(key)) unique.set(key, event);
+    });
+
+    return Array.from(unique.values())
+      .filter(event => new Date(event.end) >= now)
+      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .slice(0, 6);
+  }, [calendarData]);
+
   if (loading) {
     return (
       <div className="team-calendar">
-        <h2>📅 Meeskonna kalender</h2>
+        <h2>Meeskonna kalender</h2>
         <div className="loading">Laadimine...</div>
       </div>
     );
@@ -109,7 +128,7 @@ const TeamCalendar = () => {
   if (error) {
     return (
       <div className="team-calendar">
-        <h2>📅 Meeskonna kalender</h2>
+        <h2>Meeskonna kalender</h2>
         <div className="error-box">{error}</div>
       </div>
     );
@@ -119,9 +138,12 @@ const TeamCalendar = () => {
 
   return (
     <div className="team-calendar">
-      <div className="calendar-header">
-        <h2>📅 Meeskonna kalender</h2>
-        
+      <div className="calendar-hero">
+        <div>
+          <h2>Meeskonna kalender</h2>
+          <p>Näed kiiresti, millal tiimis on puhkuseid ja kus võivad tekkida kattuvused.</p>
+        </div>
+
         <div className="calendar-controls">
           <select
             value={selectedDepartment}
@@ -135,14 +157,29 @@ const TeamCalendar = () => {
           </select>
 
           <div className="month-nav">
-            <button onClick={() => changeMonth(-1)} className="btn-nav">
-              ←
+            <button onClick={() => changeMonth(-1)} className="btn-nav" aria-label="Eelmine kuu">
+              ‹
             </button>
             <h3>{monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}</h3>
-            <button onClick={() => changeMonth(1)} className="btn-nav">
-              →
+            <button onClick={() => changeMonth(1)} className="btn-nav" aria-label="Järgmine kuu">
+              ›
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="calendar-stats">
+        <div className="stat-pill">
+          <span className="stat-label">Puhkusi selles kuus</span>
+          <strong>{calendarData?.events?.length || 0}</strong>
+        </div>
+        <div className="stat-pill">
+          <span className="stat-label">Maksimaalne puudujate arv päevas</span>
+          <strong>{maxAbsence}</strong>
+        </div>
+        <div className="stat-pill">
+          <span className="stat-label">Filter</span>
+          <strong>{selectedDepartment || 'Kõik osakonnad'}</strong>
         </div>
       </div>
 
@@ -169,26 +206,28 @@ const TeamCalendar = () => {
                 key={date.toISOString()}
                 className={`calendar-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${events.length > 0 ? 'has-events' : ''}`}
               >
-                <div className="day-number">{date.getDate()}</div>
-                
-                {absenceCount > 0 && (
-                  <div className="absence-badge">{absenceCount} ära</div>
-                )}
+                <div className="day-top">
+                  <div className="day-number">{date.getDate()}</div>
+                  {absenceCount > 0 && (
+                    <div className="absence-badge">{absenceCount}</div>
+                  )}
+                </div>
 
                 {events.length > 0 && (
                   <div className="day-events">
-                    {events.slice(0, 3).map((event, idx) => (
+                    {events.slice(0, 2).map((event, idx) => (
                       <div
                         key={idx}
                         className="event-indicator"
                         style={{ backgroundColor: event.color }}
                         title={`${event.userName} - ${event.leaveType}`}
                       >
+                        <span className="event-avatar">{event.userName.charAt(0)}</span>
                         <span className="event-name">{event.userName.split(' ')[0]}</span>
                       </div>
                     ))}
-                    {events.length > 3 && (
-                      <div className="more-events">+{events.length - 3} veel</div>
+                    {events.length > 2 && (
+                      <div className="more-events">+{events.length - 2}</div>
                     )}
                   </div>
                 )}
@@ -198,26 +237,27 @@ const TeamCalendar = () => {
         </div>
       </div>
 
-      {calendarData && calendarData.events.length > 0 && (
-        <div className="calendar-legend">
-          <h4>Puhkusel ({calendarData.events.length}):</h4>
-          <div className="legend-items">
-            {calendarData.events.map((event, idx) => (
-              <div key={idx} className="legend-item">
-                <div
-                  className="legend-color"
-                  style={{ backgroundColor: event.color }}
-                />
-                <span className="legend-text">
-                  {event.userName} ({new Date(event.start).toLocaleDateString('et-EE')} - {new Date(event.end).toLocaleDateString('et-EE')})
-                </span>
+      {upcomingEvents.length > 0 ? (
+        <div className="calendar-upcoming">
+          <h4>Järgmised puhkused</h4>
+          <div className="upcoming-list">
+            {upcomingEvents.map((event, idx) => (
+              <div key={`${event.userName}-${idx}`} className="upcoming-item">
+                <span className="upcoming-color" style={{ backgroundColor: event.color }} />
+                <div className="upcoming-main">
+                  <strong>{event.userName}</strong>
+                  <span>{event.leaveType}</span>
+                </div>
+                <div className="upcoming-date">
+                  {new Date(event.start).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })}
+                  {' – '}
+                  {new Date(event.end).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })}
+                </div>
               </div>
             ))}
           </div>
         </div>
-      )}
-
-      {calendarData && calendarData.events.length === 0 && (
+      ) : (
         <div className="empty-calendar">
           Valitud perioodil ei ole kinnitatud puhkuseid.
         </div>

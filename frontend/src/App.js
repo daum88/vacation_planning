@@ -281,19 +281,19 @@ Admin
             <>
               <div className="view-toggle">
                 <button
-                  className={`toggle-btn ${currentView === 'requests' ? 'active' : ''}`}
+                  className={`toggle-btn tab-requests ${currentView === 'requests' ? 'active' : ''}`}
                   onClick={() => setCurrentView('requests')}
                 >
 Taotlused
                 </button>
                 <button
-                  className={`toggle-btn ${currentView === 'statistics' ? 'active' : ''}`}
+                  className={`toggle-btn tab-statistics ${currentView === 'statistics' ? 'active' : ''}`}
                   onClick={() => setCurrentView('statistics')}
                 >
 Statistika
                 </button>
                 <button
-                  className={`toggle-btn ${currentView === 'calendar' ? 'active' : ''}`}
+                  className={`toggle-btn tab-calendar ${currentView === 'calendar' ? 'active' : ''}`}
                   onClick={() => setCurrentView('calendar')}
                 >
 Kalender

@@ -300,6 +300,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             <label htmlFor="startDate" className="form-label">
               Alguskuupäev *
             </label>
+            <span className="field-hint">Millal soovid puhkust alustada?</span>
             <input
               type="date"
               id="startDate"
@@ -317,6 +318,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             <label htmlFor="endDate" className="form-label">
               Lõppkuupäev *
             </label>
+            <span className="field-hint">Mis kuupäevani puhkad?</span>
             <input
               type="date"
               id="endDate"
@@ -360,6 +362,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           <label htmlFor="comment" className="form-label">
             Lisa kommentaar (valikuline)
           </label>
+          <span className="field-hint">Lisa märkus juhile või meeskonnale.</span>
           <textarea
             id="comment"
             name="comment"

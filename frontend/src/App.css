@@ -187,19 +187,49 @@
 }
 
 .toggle-btn {
+  position: relative;
   background: transparent;
   border: none;
   color: var(--color-text-secondary);
   font-size: 15px;
   font-weight: 500;
-  padding: 10px 2px;
+  padding: 10px 2px 10px 22px;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+}
+
+.toggle-btn::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%);
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.toggle-btn.tab-requests::before {
+  background: linear-gradient(180deg, #f8fafc 0%, #eaf1ff 100%);
+}
+
+.toggle-btn.tab-statistics::before {
+  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.toggle-btn.tab-calendar::before {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
 }
 
 .toggle-btn.active {
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
+}
+
+.toggle-btn.active::before {
+  border-color: rgba(0, 113, 227, 0.3);
 }
 
 .requests-layout {
