@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { formatDate } from '../../utils/dateUtils';
 import { vacationRequestsApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
@@ -9,6 +9,13 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
   const [auditLogs, setAuditLogs] = useState({});
   const [loadingAudit, setLoadingAudit] = useState({});
   const toast = useToast();
+
+  const summary = useMemo(() => {
+    const pending = requests.filter(r => r.status === 'Pending').length;
+    const approved = requests.filter(r => r.status === 'Approved').length;
+    const rejected = requests.filter(r => r.status === 'Rejected').length;
+    return { pending, approved, rejected };
+  }, [requests]);
 
   const toggleExpand = (requestId) => {
     if (expandedRequest === requestId) {
@@ -76,10 +83,14 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
   if (requests.length === 0) {
     return (
       <div className="list-container">
-        <h2>Minu puhkusetaotlused</h2>
+        <div className="list-header">
+          <h2>Minu puhkusetaotlused</h2>
+          <p>Siia tekib sinu taotluste ajalugu koos staatustega.</p>
+        </div>
         <div className="empty-state">
-          <p>Ühtegi puhkusetaotlust pole veel esitatud.</p>
-          <p>Loo oma esimene taotlus ülaltoodud vormis!</p>
+          <h3>Siin on hetkel vaikne</h3>
+          <p>Sul ei ole veel ühtegi puhkusetaotlust.</p>
+          <p>Loo esimene taotlus ülal oleva vormiga.</p>
         </div>
       </div>
     );
@@ -87,7 +98,17 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
 
   return (
     <div className="list-container">
-      <h2>Minu puhkusetaotlused ({requests.length})</h2>
+      <div className="list-header">
+        <h2>Minu puhkusetaotlused ({requests.length})</h2>
+        <p>Hoia silm peal, mis on ootel ja mis on kinnitatud.</p>
+      </div>
+
+      <div className="list-summary-row">
+        <div className="summary-chip pending">{summary.pending} ootel</div>
+        <div className="summary-chip approved">{summary.approved} kinnitatud</div>
+        <div className="summary-chip rejected">{summary.rejected} tagasi lükatud</div>
+      </div>
+
       <div className="requests-grid">
         {requests.map((request) => (
           <div key={request.id} className={`request-card status-${request.status?.toLowerCase() || 'pending'}`}>

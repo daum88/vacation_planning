@@ -113,13 +113,12 @@ const TeamCalendar = () => {
     return Array.from(unique.values())
       .filter(event => new Date(event.end) >= now)
       .sort((a, b) => new Date(a.start) - new Date(b.start))
-      .slice(0, 6);
+      .slice(0, 8);
   }, [calendarData]);
 
   if (loading) {
     return (
       <div className="team-calendar">
-        <h2>Meeskonna kalender</h2>
         <div className="loading">Laadimine...</div>
       </div>
     );
@@ -128,7 +127,6 @@ const TeamCalendar = () => {
   if (error) {
     return (
       <div className="team-calendar">
-        <h2>Meeskonna kalender</h2>
         <div className="error-box">{error}</div>
       </div>
     );
@@ -138,10 +136,10 @@ const TeamCalendar = () => {
 
   return (
     <div className="team-calendar">
-      <div className="calendar-hero">
+      <header className="calendar-hero">
         <div>
           <h2>Meeskonna kalender</h2>
-          <p>Näed kiiresti, millal tiimis on puhkuseid ja kus võivad tekkida kattuvused.</p>
+          <p>Näed kiiresti, millal tiimis on puhkuseid ja kus tekib kattuvus.</p>
         </div>
 
         <div className="calendar-controls">
@@ -157,111 +155,110 @@ const TeamCalendar = () => {
           </select>
 
           <div className="month-nav">
-            <button onClick={() => changeMonth(-1)} className="btn-nav" aria-label="Eelmine kuu">
-              ‹
-            </button>
+            <button onClick={() => changeMonth(-1)} className="btn-nav" aria-label="Eelmine kuu">‹</button>
             <h3>{monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}</h3>
-            <button onClick={() => changeMonth(1)} className="btn-nav" aria-label="Järgmine kuu">
-              ›
-            </button>
+            <button onClick={() => changeMonth(1)} className="btn-nav" aria-label="Järgmine kuu">›</button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="calendar-stats">
-        <div className="stat-pill">
-          <span className="stat-label">Puhkusi selles kuus</span>
+      <section className="calendar-stats">
+        <article className="stat-pill">
+          <span>Puhkusi selles kuus</span>
           <strong>{calendarData?.events?.length || 0}</strong>
-        </div>
-        <div className="stat-pill">
-          <span className="stat-label">Maksimaalne puudujate arv päevas</span>
+        </article>
+        <article className="stat-pill">
+          <span>Max puudujate arv päevas</span>
           <strong>{maxAbsence}</strong>
-        </div>
-        <div className="stat-pill">
-          <span className="stat-label">Filter</span>
+        </article>
+        <article className="stat-pill">
+          <span>Aktiivne filter</span>
           <strong>{selectedDepartment || 'Kõik osakonnad'}</strong>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div className="calendar-grid-wrapper">
-        <div className="calendar-weekdays">
-          {weekDays.map(day => (
-            <div key={day} className="weekday">{day}</div>
-          ))}
-        </div>
-
-        <div className="calendar-grid">
-          {days.map((date, index) => {
-            if (!date) {
-              return <div key={`empty-${index}`} className="calendar-day empty" />;
-            }
-
-            const events = getEventsForDay(date);
-            const absenceCount = getAbsenceCount(date);
-            const isToday = date.toDateString() === new Date().toDateString();
-            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-            return (
-              <div
-                key={date.toISOString()}
-                className={`calendar-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${events.length > 0 ? 'has-events' : ''}`}
-              >
-                <div className="day-top">
-                  <div className="day-number">{date.getDate()}</div>
-                  {absenceCount > 0 && (
-                    <div className="absence-badge">{absenceCount}</div>
-                  )}
-                </div>
-
-                {events.length > 0 && (
-                  <div className="day-events">
-                    {events.slice(0, 2).map((event, idx) => (
-                      <div
-                        key={idx}
-                        className="event-indicator"
-                        style={{ backgroundColor: event.color }}
-                        title={`${event.userName} - ${event.leaveType}`}
-                      >
-                        <span className="event-avatar">{event.userName.charAt(0)}</span>
-                        <span className="event-name">{event.userName.split(' ')[0]}</span>
-                      </div>
-                    ))}
-                    {events.length > 2 && (
-                      <div className="more-events">+{events.length - 2}</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {upcomingEvents.length > 0 ? (
-        <div className="calendar-upcoming">
-          <h4>Järgmised puhkused</h4>
-          <div className="upcoming-list">
-            {upcomingEvents.map((event, idx) => (
-              <div key={`${event.userName}-${idx}`} className="upcoming-item">
-                <span className="upcoming-color" style={{ backgroundColor: event.color }} />
-                <div className="upcoming-main">
-                  <strong>{event.userName}</strong>
-                  <span>{event.leaveType}</span>
-                </div>
-                <div className="upcoming-date">
-                  {new Date(event.start).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })}
-                  {' – '}
-                  {new Date(event.end).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })}
-                </div>
-              </div>
+      <section className="calendar-layout">
+        <div className="calendar-board">
+          <div className="calendar-weekdays">
+            {weekDays.map(day => (
+              <div key={day} className="weekday">{day}</div>
             ))}
           </div>
+
+          <div className="calendar-grid">
+            {days.map((date, index) => {
+              if (!date) {
+                return <div key={`empty-${index}`} className="calendar-day empty" />;
+              }
+
+              const events = getEventsForDay(date);
+              const absenceCount = getAbsenceCount(date);
+              const isToday = date.toDateString() === new Date().toDateString();
+              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+              return (
+                <div
+                  key={date.toISOString()}
+                  className={`calendar-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${events.length > 0 ? 'has-events' : ''}`}
+                >
+                  <div className="day-top">
+                    <div className="day-number">{date.getDate()}</div>
+                    {absenceCount > 0 && <div className="absence-badge">{absenceCount}</div>}
+                  </div>
+
+                  {events.length > 0 && (
+                    <div className="day-events">
+                      {events.slice(0, 2).map((event, idx) => (
+                        <div
+                          key={idx}
+                          className="event-indicator"
+                          style={{ backgroundColor: event.color }}
+                          title={`${event.userName} - ${event.leaveType}`}
+                        >
+                          <span className="event-avatar">{event.userName.charAt(0)}</span>
+                          <span className="event-name">{event.userName.split(' ')[0]}</span>
+                        </div>
+                      ))}
+                      {events.length > 2 && <div className="more-events">+{events.length - 2}</div>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      ) : (
-        <div className="empty-calendar">
-          Valitud perioodil ei ole kinnitatud puhkuseid.
-        </div>
-      )}
+
+        <aside className="calendar-sidepanel">
+          <div className="sidepanel-card">
+            <h4>Järgmised puhkused</h4>
+            {upcomingEvents.length > 0 ? (
+              <div className="upcoming-list">
+                {upcomingEvents.map((event, idx) => (
+                  <div key={`${event.userName}-${idx}`} className="upcoming-item">
+                    <span className="upcoming-color" style={{ backgroundColor: event.color }} />
+                    <div className="upcoming-main">
+                      <strong>{event.userName}</strong>
+                      <span>{event.leaveType}</span>
+                    </div>
+                    <div className="upcoming-date">
+                      {new Date(event.start).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })}
+                      {' – '}
+                      {new Date(event.end).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="sidepanel-empty">Selles perioodis puuduvad kinnitatud puhkused.</div>
+            )}
+          </div>
+
+          <div className="sidepanel-card soft">
+            <h4>Kasutus</h4>
+            <p>Päevad, kus puudub rohkem inimesi, on kalendris tumedama tooniga märgitud.</p>
+          </div>
+        </aside>
+      </section>
     </div>
   );
 };

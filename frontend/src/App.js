@@ -210,13 +210,13 @@ function AppContent() {
                 className={`role-btn ${userRole === 'employee' ? 'active' : ''}`}
                 onClick={() => handleRoleSwitch('employee')}
               >
-Töötaja
+                Töötaja
               </button>
               <button
                 className={`role-btn ${userRole === 'admin' ? 'active' : ''}`}
                 onClick={() => handleRoleSwitch('admin')}
               >
-Admin
+                Admin
               </button>
             </div>
           </div>
@@ -302,19 +302,19 @@ Admin
                   className={`toggle-btn tab-requests ${currentView === 'requests' ? 'active' : ''}`}
                   onClick={() => setCurrentView('requests')}
                 >
-Taotlused
+                  Taotlused
                 </button>
                 <button
                   className={`toggle-btn tab-statistics ${currentView === 'statistics' ? 'active' : ''}`}
                   onClick={() => setCurrentView('statistics')}
                 >
-Statistika
+                  Statistika
                 </button>
                 <button
                   className={`toggle-btn tab-calendar ${currentView === 'calendar' ? 'active' : ''}`}
                   onClick={() => setCurrentView('calendar')}
                 >
-Kalender
+                  Kalender
                 </button>
               </div>
 
