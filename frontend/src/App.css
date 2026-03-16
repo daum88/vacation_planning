@@ -8,7 +8,7 @@
 }
 
 .header-content {
-  max-width: 900px;
+  max-width: 1080px;
   margin: 0 auto;
   height: 100%;
   padding: 0 var(--space-lg);
@@ -77,7 +77,7 @@
 }
 
 .app-main .container {
-  max-width: 900px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: var(--space-xl) var(--space-lg);
 }
@@ -202,12 +202,106 @@
   border-bottom-color: var(--color-accent);
 }
 
+.requests-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.primary-column {
+  min-width: 0;
+}
+
+.context-column {
+  position: sticky;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.context-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.context-card.soft {
+  background: #f8f9fc;
+}
+
+.context-card h3 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.context-card p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+.context-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.context-card li {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.context-card li span {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.status-legend {
+  display: grid;
+  gap: 8px;
+}
+
+.status-legend div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dot.pending { background: #f59e0b; }
+.dot.approved { background: #22c55e; }
+.dot.rejected { background: #ef4444; }
+.dot.withdrawn { background: #9ca3af; }
+
+.section-kicker {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
 .primary-action-section {
   margin-bottom: var(--space-2xl);
 }
 
 .app-footer {
-  max-width: 900px;
+  max-width: 1080px;
   margin: var(--space-xl) auto;
   padding: 0 var(--space-lg) var(--space-lg);
   color: var(--color-text-secondary);
@@ -266,5 +360,14 @@
   .view-toggle {
     overflow-x: auto;
     white-space: nowrap;
+  }
+
+  .requests-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .context-column {
+    position: static;
+    order: -1;
   }
 }

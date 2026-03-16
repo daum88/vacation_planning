@@ -140,22 +140,51 @@ function AppContent() {
         return <TeamCalendar />;
       default:
         return (
-          <>
-            <section ref={formSectionRef} className="primary-action-section">
-              <VacationRequestForm
-                onSuccess={handleSuccess}
-                editRequest={editingRequest}
-                onCancel={handleCancelEdit}
-              />
-            </section>
-            <VacationRequestList
-              requests={requests}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onWithdraw={handleWithdraw}
-              loading={loading}
-            />
-          </>
+          <div className="requests-layout">
+            <div className="primary-column">
+              <section ref={formSectionRef} className="primary-action-section">
+                <div className="section-kicker">UUS TAOTLUS</div>
+                <VacationRequestForm
+                  onSuccess={handleSuccess}
+                  editRequest={editingRequest}
+                  onCancel={handleCancelEdit}
+                />
+              </section>
+
+              <section className="history-section">
+                <div className="section-kicker">AJALUGU</div>
+                <VacationRequestList
+                  requests={requests}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onWithdraw={handleWithdraw}
+                  loading={loading}
+                />
+              </section>
+            </div>
+
+            <aside className="context-column">
+              <div className="context-card">
+                <h3>Selle kuu ülevaade</h3>
+                <p>Planeeri puhkused varakult, et vältida meeskonna kattuvusi.</p>
+                <ul>
+                  <li><span>{currentUser?.remainingLeaveDays ?? 0}</span> päeva saad veel kasutada</li>
+                  <li><span>{requests.filter(r => r.status === 'Pending').length}</span> taotlust ootab kinnitamist</li>
+                  <li><span>{requests.filter(r => r.status === 'Approved').length}</span> taotlust on kinnitatud</li>
+                </ul>
+              </div>
+
+              <div className="context-card soft">
+                <h3>Staatused</h3>
+                <div className="status-legend">
+                  <div><span className="dot pending" /> Ootel</div>
+                  <div><span className="dot approved" /> Kinnitatud</div>
+                  <div><span className="dot rejected" /> Tagasi lükatud</div>
+                  <div><span className="dot withdrawn" /> Tagasi võetud</div>
+                </div>
+              </div>
+            </aside>
+          </div>
         );
     }
   };
