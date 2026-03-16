@@ -1,8 +1,69 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDate } from '../../utils/dateUtils';
+import { vacationRequestsApi } from '../../api/api';
+import { useToast } from '../Toast/Toast';
 import './VacationRequestList.css';
 
-const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
+const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }) => {
+  const [expandedRequest, setExpandedRequest] = useState(null);
+  const [auditLogs, setAuditLogs] = useState({});
+  const [loadingAudit, setLoadingAudit] = useState({});
+  const toast = useToast();
+
+  const toggleExpand = (requestId) => {
+    if (expandedRequest === requestId) {
+      setExpandedRequest(null);
+    } else {
+      setExpandedRequest(requestId);
+      if (!auditLogs[requestId]) {
+        fetchAuditLogs(requestId);
+      }
+    }
+  };
+
+  const fetchAuditLogs = async (requestId) => {
+    try {
+      setLoadingAudit(prev => ({ ...prev, [requestId]: true }));
+      const response = await vacationRequestsApi.getAuditLogs(requestId);
+      setAuditLogs(prev => ({ ...prev, [requestId]: response.data }));
+    } catch (err) {
+      console.error('Error fetching audit logs:', err);
+      toast.error('Viga auditi logide laadimisel');
+    } finally {
+      setLoadingAudit(prev => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+  const handleDownloadAttachment = async (requestId, attachmentId, fileName) => {
+    try {
+      const response = await vacationRequestsApi.downloadAttachment(requestId, attachmentId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success(`Fail ${fileName} allalaaditud ✓`);
+    } catch (err) {
+      console.error('Error downloading attachment:', err);
+      toast.error('Viga faili allalaadimisel');
+    }
+  };
+
+  const handleDeleteAttachment = async (requestId, attachmentId) => {
+    if (window.confirm('Kas oled kindel, et soovid selle manuse kustutada?')) {
+      try {
+        await vacationRequestsApi.deleteAttachment(requestId, attachmentId);
+        toast.success('Manus kustutatud ✓');
+        // Refresh would be handled by parent component
+      } catch (err) {
+        console.error('Error deleting attachment:', err);
+        toast.error('Viga manuse kustutamisel');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="list-container">
@@ -26,10 +87,11 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
 
   return (
     <div className="list-container">
-      <h2>Minu puhkusetaotlused</h2>
+      <h2>Minu puhkusetaotlused ({requests.length})</h2>
       <div className="requests-grid">
         {requests.map((request) => (
           <div key={request.id} className={`request-card status-${request.status?.toLowerCase() || 'pending'}`}>
+            {/* Header with dates and badges */}
             <div className="request-header">
               <div className="request-dates">
                 <div className="date-item">
@@ -51,11 +113,20 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
                     {request.status === 'Pending' && '⏳ Ootel'}
                     {request.status === 'Approved' && '✓ Kinnitatud'}
                     {request.status === 'Rejected' && '✗ Tagasi lükatud'}
+                    {request.status === 'Withdrawn' && '↩ Tagasi võetud'}
                   </div>
                 )}
               </div>
             </div>
 
+            {/* Leave Type */}
+            {request.leaveTypeName && (
+              <div className="leave-type-badge" style={{ backgroundColor: request.leaveTypeColor || '#007AFF' }}>
+                {request.leaveTypeName}
+              </div>
+            )}
+
+            {/* Comment */}
             {request.comment && (
               <div className="request-comment">
                 <strong>Kommentaar:</strong>
@@ -63,16 +134,56 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
               </div>
             )}
 
+            {/* Admin Response */}
             {request.adminComment && (
               <div className="admin-response">
                 <strong>Admin vastus:</strong>
                 <p>{request.adminComment}</p>
                 {request.approvedAt && (
-                  <small>Vastatud: {formatDate(request.approvedAt)}</small>
+                  <small>
+                    {request.approvedByName} • {formatDate(request.approvedAt)}
+                  </small>
                 )}
               </div>
             )}
 
+            {/* Attachments */}
+            {request.attachments && request.attachments.length > 0 && (
+              <div className="attachments-section">
+                <strong>Manused ({request.attachments.length}):</strong>
+                <div className="attachments-list">
+                  {request.attachments.map(attachment => (
+                    <div key={attachment.id} className="attachment-item">
+                      <span className="attachment-icon">📎</span>
+                      <span className="attachment-name">{attachment.fileName}</span>
+                      <span className="attachment-size">
+                        ({(attachment.fileSize / 1024).toFixed(1)} KB)
+                      </span>
+                      <div className="attachment-actions">
+                        <button
+                          onClick={() => handleDownloadAttachment(request.id, attachment.id, attachment.fileName)}
+                          className="btn-attachment-action"
+                          title="Laadi alla"
+                        >
+                          ⬇
+                        </button>
+                        {request.canDelete && (
+                          <button
+                            onClick={() => handleDeleteAttachment(request.id, attachment.id)}
+                            className="btn-attachment-delete"
+                            title="Kustuta"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Metadata */}
             <div className="request-meta">
               <small>Loodud: {formatDate(request.createdAt)}</small>
               {request.updatedAt !== request.createdAt && (
@@ -80,22 +191,66 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
               )}
             </div>
 
+            {/* Actions */}
             <div className="request-actions">
-              {request.status === 'Pending' && (
+              {request.canEdit && (
                 <button
                   onClick={() => onEdit(request)}
                   className="btn btn-edit"
                 >
-                  Muuda
+                  ✏️ Muuda
+                </button>
+              )}
+              {request.canWithdraw && (
+                <button
+                  onClick={() => onWithdraw(request.id)}
+                  className="btn btn-withdraw"
+                >
+                  ↩ Võta tagasi
+                </button>
+              )}
+              {request.canDelete && (
+                <button
+                  onClick={() => onDelete(request.id)}
+                  className="btn btn-delete"
+                >
+                  🗑️ Kustuta
                 </button>
               )}
               <button
-                onClick={() => onDelete(request.id)}
-                className="btn btn-delete"
+                onClick={() => toggleExpand(request.id)}
+                className="btn btn-expand"
               >
-                Kustuta
+                {expandedRequest === request.id ? '▲ Vähenda' : '▼ Rohkem'}
               </button>
             </div>
+
+            {/* Expanded Section - Audit Trail */}
+            {expandedRequest === request.id && (
+              <div className="expanded-section">
+                <h4>📋 Auditi logi</h4>
+                {loadingAudit[request.id] ? (
+                  <div className="loading-audit">Laadimine...</div>
+                ) : auditLogs[request.id] && auditLogs[request.id].length > 0 ? (
+                  <div className="audit-trail">
+                    {auditLogs[request.id].map(log => (
+                      <div key={log.id} className="audit-entry">
+                        <div className="audit-header">
+                          <strong>{log.userName}</strong>
+                          <span className="audit-action">{log.action}</span>
+                        </div>
+                        {log.details && <div className="audit-details">{log.details}</div>}
+                        <div className="audit-timestamp">
+                          {formatDate(log.timestamp)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-audit">Auditi logid puuduvad</div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
