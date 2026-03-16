@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { vacationRequestsApi, leaveTypesApi, usersApi, calendarApi, blackoutPeriodsApi } from '../../api/api';
+import { vacationRequestsApi, leaveTypesApi, usersApi, calendarApi, blackoutPeriodsApi, departmentCapacityApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
 import { countWorkingDays, countCalendarDays, getHolidaysInRange } from '../../utils/dateUtils';
+import DateSuggester from '../DateSuggester/DateSuggester';
 import './VacationRequestForm.css';
 
 const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
@@ -16,8 +17,10 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [userBalance, setUserBalance] = useState(null);
+  const [userDepartment, setUserDepartment] = useState('');
   const [conflicts, setConflicts] = useState(null);
   const [blackouts, setBlackouts] = useState([]);
+  const [capacityWarning, setCapacityWarning] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const toast = useToast();
 
@@ -44,6 +47,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
       checkConflicts();
+      checkCapacity();
     }
   }, [formData.startDate, formData.endDate]);
 
@@ -59,8 +63,12 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   const fetchUserBalance = async () => {
     try {
       const userId = localStorage.getItem('userId') || '1';
-      const response = await usersApi.getBalance(userId);
-      setUserBalance(response.data);
+      const [balanceRes, userRes] = await Promise.all([
+        usersApi.getBalance(userId),
+        usersApi.getById(userId),
+      ]);
+      setUserBalance(balanceRes.data);
+      setUserDepartment(userRes.data.department || '');
     } catch (err) {
       console.error('Error fetching balance:', err);
     }
@@ -85,6 +93,26 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
       setConflicts(response.data);
     } catch (err) {
       console.error('Error checking conflicts:', err);
+    }
+  };
+
+  const checkCapacity = async () => {
+    if (!userDepartment) return;
+    try {
+      const userId = parseInt(localStorage.getItem('userId') || '1');
+      const res = await departmentCapacityApi.check(
+        userDepartment,
+        formData.startDate,
+        formData.endDate,
+        userId
+      );
+      if (res.data.hasLimit && res.data.wouldExceed) {
+        setCapacityWarning(res.data);
+      } else {
+        setCapacityWarning(null);
+      }
+    } catch {
+      setCapacityWarning(null);
     }
   };
 
@@ -274,6 +302,26 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
 
         <section className="form-section">
           <div className="form-section-title">Kuupäevad</div>
+
+          {userBalance && (
+            <DateSuggester
+              remainingDays={userBalance.remainingLeaveDays}
+              blackouts={blackouts}
+              onSelect={(start, end) => {
+                setFormData(prev => ({ ...prev, startDate: start, endDate: end }));
+                setErrors(prev => { const n = { ...prev }; delete n.startDate; delete n.endDate; return n; });
+              }}
+            />
+          )}
+
+          {/* Capacity warning */}
+          {capacityWarning && (
+            <div className="capacity-warning">
+              <strong>Osakonna limiit täis:</strong> {capacityWarning.department} osakonnal on juba {capacityWarning.currentCount}/{capacityWarning.maxConcurrent} inimest puhkusel sellel perioodil.
+              Vali teised kuupäevad või konsulteeri juhiga.
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="startDate" className="form-label">Alguskuupäev *</label>

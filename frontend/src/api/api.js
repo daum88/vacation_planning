@@ -67,23 +67,32 @@ export const vacationRequestsApi = {
   update: (id, data) => api.put(`/VacationRequests/${id}`, data),
   delete: (id) => api.delete(`/VacationRequests/${id}`),
   withdraw: (id) => api.post(`/VacationRequests/${id}/withdraw`),
-  
+
   // Admin endpoints
   getAllAdmin: (filters) => api.get('/VacationRequests/admin/all', { params: filters }),
   getPending: () => api.get('/VacationRequests/admin/pending'),
   approve: (id, data) => api.post(`/VacationRequests/admin/approve/${id}`, data),
+  bulkApprove: (items) => api.post('/VacationRequests/admin/bulk-approve', items),
   deleteAdmin: (id) => api.delete(`/VacationRequests/admin/${id}`),
-  
+
   // Statistics
   getStatistics: () => api.get('/VacationRequests/statistics'),
-  
+
   // Export
   exportCsv: () => api.get('/VacationRequests/export/csv', { responseType: 'blob' }),
   exportIcal: () => api.get('/VacationRequests/export/ical', { responseType: 'blob' }),
-  
+
+  // iCal subscription feed URL (for calendar apps to subscribe to)
+  getICalFeedUrl: (userId) =>
+    `${API_BASE_URL}/VacationRequests/ical/user/${userId}`,
+
   // Audit
   getAuditLogs: (id) => api.get(`/VacationRequests/${id}/audit`),
-  
+
+  // Comments
+  getComments: (id) => api.get(`/VacationRequests/${id}/comments`),
+  postComment: (id, text) => api.post(`/VacationRequests/${id}/comments`, { text }),
+
   // Attachments
   uploadAttachment: (id, file) => {
     const formData = new FormData();
@@ -92,9 +101,9 @@ export const vacationRequestsApi = {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
-  downloadAttachment: (requestId, attachmentId) => 
+  downloadAttachment: (requestId, attachmentId) =>
     api.get(`/VacationRequests/${requestId}/attachments/${attachmentId}`, { responseType: 'blob' }),
-  deleteAttachment: (requestId, attachmentId) => 
+  deleteAttachment: (requestId, attachmentId) =>
     api.delete(`/VacationRequests/${requestId}/attachments/${attachmentId}`)
 };
 
@@ -104,6 +113,7 @@ export const usersApi = {
   getCurrent: () => api.get('/Users/current'),
   getBalance: (id) => api.get(`/Users/${id}/balance`),
   updateCarryOver: (id, carryOverDays) => api.put(`/Users/${id}/carryover`, { carryOverDays }),
+  annualReset: (maxCarryOverDays = 5) => api.post('/Users/annual-reset', null, { params: { maxCarryOverDays } }),
 };
 
 // Leave Types API
@@ -128,6 +138,16 @@ export const blackoutPeriodsApi = {
   getAll: (activeOnly = true) => api.get('/BlackoutPeriods', { params: { activeOnly } }),
   create: (data) => api.post('/BlackoutPeriods', data),
   delete: (id) => api.delete(`/BlackoutPeriods/${id}`),
+};
+
+// Department Capacity API
+export const departmentCapacityApi = {
+  getAll: () => api.get('/DepartmentCapacity'),
+  check: (department, startDate, endDate, excludeUserId) =>
+    api.get('/DepartmentCapacity/check', { params: { department, startDate, endDate, excludeUserId } }),
+  create: (data) => api.post('/DepartmentCapacity', data),
+  update: (id, data) => api.put(`/DepartmentCapacity/${id}`, data),
+  delete: (id) => api.delete(`/DepartmentCapacity/${id}`),
 };
 
 // Notifications API

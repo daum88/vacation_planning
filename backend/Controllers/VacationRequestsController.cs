@@ -220,6 +220,30 @@ namespace VacationRequestApi.Controllers
                     return Conflict(new { message = "Sellel perioodil on juba puhkusetaotlus olemas." });
                 }
 
+                // Check department capacity
+                var deptCapacity = await _context.DepartmentCapacities
+                    .FirstOrDefaultAsync(dc => dc.Department == user.Department && dc.IsActive);
+                if (deptCapacity != null)
+                {
+                    var concurrentCount = await _context.VacationRequests
+                        .Include(r => r.User)
+                        .CountAsync(r => r.User != null
+                            && r.User.Department == user.Department
+                            && r.Status == VacationRequestStatus.Approved
+                            && r.StartDate <= dto.EndDate.Date
+                            && r.EndDate >= dto.StartDate.Date
+                            && r.UserId != userId);
+                    if (concurrentCount >= deptCapacity.MaxConcurrent)
+                    {
+                        return Conflict(new
+                        {
+                            message = $"Osakonna '{user.Department}' puhkuse limiit on täis " +
+                                      $"({deptCapacity.MaxConcurrent} inimest korraga). Vali teised kuupäevad.",
+                            capacityExceeded = true
+                        });
+                    }
+                }
+
                 // Sanitize comment
                 var sanitizedComment = SanitizeInput(dto.Comment);
 
@@ -1054,6 +1078,204 @@ namespace VacationRequestApi.Controllers
             {
                 _logger.LogError(ex, "Error exporting to iCal");
                 return StatusCode(500, new { message = "Viga iCal eksportimisel." });
+            }
+        }
+
+        // POST: api/VacationRequests/admin/bulk-approve
+        [HttpPost("admin/bulk-approve")]
+        public async Task<ActionResult<BulkApproveResultDto>> BulkApprove([FromBody] List<BulkApproveItemDto> items)
+        {
+            if (!_userService.IsAdmin()) return Forbid();
+
+            var adminUserId = _userService.GetCurrentUserId();
+            var result = new BulkApproveResultDto { Processed = items.Count };
+
+            foreach (var item in items)
+            {
+                try
+                {
+                    var vr = await _context.VacationRequests
+                        .Include(r => r.User)
+                        .Include(r => r.LeaveType)
+                        .FirstOrDefaultAsync(r => r.Id == item.Id);
+
+                    if (vr == null) { result.Failed++; result.Errors.Add($"#{item.Id}: ei leitud"); continue; }
+                    if (vr.Status != VacationRequestStatus.Pending) { result.Failed++; result.Errors.Add($"#{item.Id}: pole ootel"); continue; }
+
+                    vr.Status = item.Approved ? VacationRequestStatus.Approved : VacationRequestStatus.Rejected;
+                    vr.ApprovedByUserId = adminUserId;
+                    vr.ApprovedAt = DateTime.UtcNow;
+                    vr.AdminComment = item.AdminComment?.Trim();
+                    vr.UpdatedAt = DateTime.UtcNow;
+
+                    if (item.Approved && vr.User != null && vr.LeaveType?.IsPaid == true)
+                    {
+                        var days = _publicHolidayService.CountWorkingDays(vr.StartDate.Date, vr.EndDate.Date);
+                        vr.User.UsedLeaveDays += days;
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    await _auditService.LogActionAsync(vr.Id, adminUserId,
+                        item.Approved ? AuditAction.Approved : AuditAction.Rejected,
+                        $"Bulk {(item.Approved ? "approved" : "rejected")}: {item.AdminComment}",
+                        null, null, GetIpAddress(), GetUserAgent());
+
+                    if (vr.User != null)
+                    {
+                        if (item.Approved)
+                            await _emailService.SendRequestApprovedEmailAsync(vr.Id, vr.User.FullName, vr.User.Email, item.AdminComment);
+                        else
+                            await _emailService.SendRequestRejectedEmailAsync(vr.Id, vr.User.FullName, vr.User.Email, item.AdminComment);
+                    }
+
+                    result.Succeeded++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Bulk approve error for request {Id}", item.Id);
+                    result.Failed++;
+                    result.Errors.Add($"#{item.Id}: {ex.Message}");
+                }
+            }
+
+            return Ok(result);
+        }
+
+        // GET: api/VacationRequests/ical/user/{userId} — live iCal subscription feed
+        [HttpGet("ical/user/{userId}")]
+        public async Task<IActionResult> GetICalFeed(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return NotFound();
+
+                var requests = await _context.VacationRequests
+                    .Include(vr => vr.LeaveType)
+                    .Where(vr => vr.UserId == userId && vr.Status == VacationRequestStatus.Approved)
+                    .OrderBy(vr => vr.StartDate)
+                    .ToListAsync();
+
+                var ical = new System.Text.StringBuilder();
+                ical.AppendLine("BEGIN:VCALENDAR");
+                ical.AppendLine("VERSION:2.0");
+                ical.AppendLine($"PRODID:-//Puhkusetaotluste süsteem//{user.FullName}//ET");
+                ical.AppendLine("CALSCALE:GREGORIAN");
+                ical.AppendLine("METHOD:PUBLISH");
+                ical.AppendLine($"X-WR-CALNAME:{user.FullName} puhkused");
+                ical.AppendLine("X-WR-TIMEZONE:Europe/Tallinn");
+                ical.AppendLine("REFRESH-INTERVAL;VALUE=DURATION:PT1H");
+
+                foreach (var req in requests)
+                {
+                    ical.AppendLine("BEGIN:VEVENT");
+                    ical.AppendLine($"UID:vacation-{req.Id}@vacationapp.local");
+                    ical.AppendLine($"DTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}");
+                    ical.AppendLine($"DTSTART;VALUE=DATE:{req.StartDate:yyyyMMdd}");
+                    ical.AppendLine($"DTEND;VALUE=DATE:{req.EndDate.AddDays(1):yyyyMMdd}");
+                    ical.AppendLine($"SUMMARY:{req.LeaveType?.Name ?? "Puhkus"}");
+                    if (!string.IsNullOrWhiteSpace(req.Comment))
+                        ical.AppendLine($"DESCRIPTION:{req.Comment.Replace("\n", "\\n")}");
+                    ical.AppendLine("STATUS:CONFIRMED");
+                    ical.AppendLine("TRANSP:OPAQUE");
+                    ical.AppendLine("END:VEVENT");
+                }
+
+                ical.AppendLine("END:VCALENDAR");
+
+                Response.Headers["Content-Disposition"] = $"attachment; filename=\"puhkused-{userId}.ics\"";
+                return Content(ical.ToString(), "text/calendar; charset=utf-8");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating iCal feed for user {UserId}", userId);
+                return StatusCode(500, new { message = "Viga iCal voo genereerimisel." });
+            }
+        }
+
+        // GET: api/VacationRequests/{id}/comments
+        [HttpGet("{id}/comments")]
+        public async Task<ActionResult<IEnumerable<RequestCommentDto>>> GetComments(int id)
+        {
+            try
+            {
+                var userId = _userService.GetCurrentUserId();
+                var isAdmin = _userService.IsAdmin();
+
+                var vr = await _context.VacationRequests.FindAsync(id);
+                if (vr == null) return NotFound();
+                if (!isAdmin && vr.UserId != userId) return Forbid();
+
+                var comments = await _context.RequestComments
+                    .Include(c => c.Author)
+                    .Where(c => c.VacationRequestId == id)
+                    .OrderBy(c => c.CreatedAt)
+                    .ToListAsync();
+
+                return Ok(comments.Select(c => new RequestCommentDto
+                {
+                    Id = c.Id,
+                    VacationRequestId = c.VacationRequestId,
+                    AuthorUserId = c.AuthorUserId,
+                    AuthorName = c.Author?.FullName ?? "Kasutaja",
+                    Text = c.Text,
+                    IsAdmin = c.IsAdmin,
+                    CreatedAt = c.CreatedAt
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading comments for request {Id}", id);
+                return StatusCode(500, new { message = "Viga kommentaaride laadimisel." });
+            }
+        }
+
+        // POST: api/VacationRequests/{id}/comments
+        [HttpPost("{id}/comments")]
+        public async Task<ActionResult<RequestCommentDto>> PostComment(int id, [FromBody] CreateCommentDto dto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.Text) || dto.Text.Length > 1000)
+                    return BadRequest(new { message = "Kommentaar on kohustuslik ja max 1000 tähemärki." });
+
+                var userId = _userService.GetCurrentUserId();
+                var isAdmin = _userService.IsAdmin();
+
+                var vr = await _context.VacationRequests.FindAsync(id);
+                if (vr == null) return NotFound();
+                if (!isAdmin && vr.UserId != userId) return Forbid();
+
+                var comment = new RequestComment
+                {
+                    VacationRequestId = id,
+                    AuthorUserId = userId,
+                    Text = dto.Text.Trim(),
+                    IsAdmin = isAdmin,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.RequestComments.Add(comment);
+                await _context.SaveChangesAsync();
+
+                await _context.Entry(comment).Reference(c => c.Author).LoadAsync();
+
+                return Ok(new RequestCommentDto
+                {
+                    Id = comment.Id,
+                    VacationRequestId = comment.VacationRequestId,
+                    AuthorUserId = comment.AuthorUserId,
+                    AuthorName = comment.Author?.FullName ?? "Kasutaja",
+                    Text = comment.Text,
+                    IsAdmin = comment.IsAdmin,
+                    CreatedAt = comment.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error posting comment for request {Id}", id);
+                return StatusCode(500, new { message = "Viga kommentaari salvestamisel." });
             }
         }
 

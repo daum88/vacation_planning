@@ -17,6 +17,8 @@ namespace VacationRequestApi.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; }
         public DbSet<NotificationLog> NotificationLogs { get; set; }
+        public DbSet<DepartmentCapacity> DepartmentCapacities { get; set; }
+        public DbSet<RequestComment> RequestComments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -145,6 +147,35 @@ namespace VacationRequestApi.Data
                 entity.Property(e => e.ToEmail).IsRequired();
                 entity.Property(e => e.SentAt).HasDefaultValueSql("datetime('now')");
                 entity.HasIndex(e => e.SentAt);
+            });
+
+            // DepartmentCapacity configuration
+            modelBuilder.Entity<DepartmentCapacity>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Department).IsRequired();
+                entity.HasIndex(e => e.Department).IsUnique();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            });
+
+            // RequestComment configuration
+            modelBuilder.Entity<RequestComment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Text).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+
+                entity.HasOne(e => e.VacationRequest)
+                    .WithMany()
+                    .HasForeignKey(e => e.VacationRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Author)
+                    .WithMany()
+                    .HasForeignKey(e => e.AuthorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.VacationRequestId);
             });
 
             // Seed data
@@ -351,6 +382,12 @@ namespace VacationRequestApi.Data
                     CreatedByUserId = 3,
                     CreatedAt = now
                 }
+            );
+            // Seed DepartmentCapacities
+            modelBuilder.Entity<DepartmentCapacity>().HasData(
+                new DepartmentCapacity { Id = 1, Department = "IT", MaxConcurrent = 2, IsActive = true, CreatedAt = now },
+                new DepartmentCapacity { Id = 2, Department = "HR", MaxConcurrent = 1, IsActive = true, CreatedAt = now },
+                new DepartmentCapacity { Id = 3, Department = "Müük", MaxConcurrent = 2, IsActive = true, CreatedAt = now }
             );
         }
     }

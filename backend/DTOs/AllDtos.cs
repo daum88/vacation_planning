@@ -238,4 +238,79 @@ namespace VacationRequestApi.DTOs
     {
         public int CarryOverDays { get; set; }
     }
+
+    // Department Capacity DTOs
+    public class DepartmentCapacityDto
+    {
+        public int Id { get; set; }
+        public string Department { get; set; } = string.Empty;
+        public int MaxConcurrent { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class DepartmentCapacityCreateDto
+    {
+        public string Department { get; set; } = string.Empty;
+        public int MaxConcurrent { get; set; } = 2;
+    }
+
+    public class DepartmentCapacityCheckDto
+    {
+        public bool HasLimit { get; set; }
+        public int MaxConcurrent { get; set; }
+        public int CurrentCount { get; set; }
+        public bool WouldExceed { get; set; }
+        public string Department { get; set; } = string.Empty;
+    }
+
+    // Request Comment DTOs
+    public class RequestCommentDto
+    {
+        public int Id { get; set; }
+        public int VacationRequestId { get; set; }
+        public int AuthorUserId { get; set; }
+        public string AuthorName { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public bool IsAdmin { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class CreateCommentDto
+    {
+        public string Text { get; set; } = string.Empty;
+    }
+
+    // Bulk Approve DTOs
+    public class BulkApproveItemDto
+    {
+        public int Id { get; set; }
+        public bool Approved { get; set; }
+        public string? AdminComment { get; set; }
+    }
+
+    public class BulkApproveResultDto
+    {
+        public int Processed { get; set; }
+        public int Succeeded { get; set; }
+        public int Failed { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
+    }
+
+    // Annual Reset DTOs
+    public class AnnualResetResultDto
+    {
+        public int UsersReset { get; set; }
+        public int Year { get; set; }
+        public int MaxCarryOverDays { get; set; }
+        public List<AnnualResetUserDto> Details { get; set; } = new List<AnnualResetUserDto>();
+    }
+
+    public class AnnualResetUserDto
+    {
+        public int UserId { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public int PreviousUsedDays { get; set; }
+        public int PreviousCarryOver { get; set; }
+        public int NewCarryOver { get; set; }
+    }
 }

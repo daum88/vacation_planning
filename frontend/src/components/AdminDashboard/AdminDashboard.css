@@ -722,3 +722,236 @@
   .team-capacity { grid-template-columns: 1fr; }
   .notification-row { grid-template-columns: 1fr; }
 }
+
+/* Bulk actions bar */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: #f0f6ff;
+  border: 1px solid #cddcfc;
+  margin-bottom: 10px;
+}
+
+.bulk-select-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.bulk-select-all input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.bulk-selected-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
+  padding: 0 6px;
+  border-left: 1px solid #cddcfc;
+}
+
+.bulk-comment-input {
+  flex: 1;
+  min-width: 180px;
+  height: 30px;
+  border: 1px solid #cddcfc;
+  padding: 0 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+/* Request checkbox */
+.request-checkbox {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.admin-request-card.selected {
+  border-color: var(--color-accent);
+  background: #f8fbff;
+}
+
+/* Comment thread inside admin card */
+.admin-comment-thread {
+  margin-top: 10px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+/* btn-link */
+.btn-link {
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+}
+
+.btn-link:hover { text-decoration: underline; }
+
+/* Carry-over header */
+.carryover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.annual-reset-section {
+  flex-shrink: 0;
+}
+
+.reset-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.reset-result {
+  background: #e8f9ee;
+  border: 1px solid #b8ecc8;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #1a7a3a;
+  margin-bottom: 10px;
+}
+
+.reset-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.reset-details span {
+  background: #fff;
+  border: 1px solid #b8ecc8;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* iCal subscription */
+.ical-section {
+  margin-top: 20px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.ical-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.ical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ical-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ical-name {
+  min-width: 160px;
+  font-weight: 600;
+}
+
+.ical-url {
+  flex: 1;
+  height: 30px;
+  border: 1px solid var(--color-border);
+  padding: 0 8px;
+  font-size: 11px;
+  background: #f5f5f7;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+}
+
+/* Dept Capacity panel */
+.capacity-panel { display: flex; flex-direction: column; gap: 12px; }
+
+.capacity-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.capacity-limits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.capacity-limit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  padding: 10px 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.capacity-limit-dept {
+  flex: 1;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.capacity-limit-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.capacity-number {
+  font-weight: 700;
+  color: var(--color-accent);
+  font-size: 14px;
+}
+
+.capacity-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.inactive-badge {
+  font-size: 10px;
+  background: #f0f0f2;
+  border: 1px solid var(--color-border);
+  padding: 1px 5px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}

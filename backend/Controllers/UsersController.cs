@@ -171,5 +171,53 @@ namespace VacationRequestApi.Controllers
                 return StatusCode(500, new { message = "Viga ülekandemise uuendamisel." });
             }
         }
+
+        // POST: api/Users/annual-reset
+        [HttpPost("annual-reset")]
+        public async Task<ActionResult<AnnualResetResultDto>> AnnualReset([FromQuery] int maxCarryOverDays = 5)
+        {
+            try
+            {
+                maxCarryOverDays = Math.Max(0, Math.Min(30, maxCarryOverDays));
+                var users = await _context.Users.Where(u => u.IsActive).ToListAsync();
+                var details = new List<AnnualResetUserDto>();
+
+                foreach (var user in users)
+                {
+                    var remaining = user.RemainingLeaveDays;
+                    var newCarry = Math.Min(remaining, maxCarryOverDays);
+
+                    details.Add(new AnnualResetUserDto
+                    {
+                        UserId = user.Id,
+                        UserName = user.FullName,
+                        PreviousUsedDays = user.UsedLeaveDays,
+                        PreviousCarryOver = user.CarryOverDays,
+                        NewCarryOver = newCarry
+                    });
+
+                    user.UsedLeaveDays = 0;
+                    user.CarryOverDays = newCarry;
+                    user.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Annual reset performed for {Count} users, maxCarryOver={Max}", users.Count, maxCarryOverDays);
+
+                return Ok(new AnnualResetResultDto
+                {
+                    UsersReset = users.Count,
+                    Year = DateTime.Now.Year,
+                    MaxCarryOverDays = maxCarryOverDays,
+                    Details = details
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing annual reset");
+                return StatusCode(500, new { message = "Viga aastase lähtestamise tegemisel." });
+            }
+        }
     }
 }

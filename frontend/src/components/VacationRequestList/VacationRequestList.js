@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { formatDate } from '../../utils/dateUtils';
 import { vacationRequestsApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
+import CommentThread from '../CommentThread/CommentThread';
 import './VacationRequestList.css';
 
 const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }) => {
@@ -323,30 +324,37 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
               </button>
             </div>
 
-            {/* Expanded Section - Audit Trail */}
+            {/* Expanded Section - Audit Trail + Comment Thread */}
             {expandedRequest === request.id && (
               <div className="expanded-section">
-                <h4>Auditi logi</h4>
-                {loadingAudit[request.id] ? (
-                  <div className="loading-audit">Laadimine...</div>
-                ) : auditLogs[request.id] && auditLogs[request.id].length > 0 ? (
-                  <div className="audit-trail">
-                    {auditLogs[request.id].map(log => (
-                      <div key={log.id} className="audit-entry">
-                        <div className="audit-header">
-                          <strong>{log.userName}</strong>
-                          <span className="audit-action">{log.action}</span>
-                        </div>
-                        {log.details && <div className="audit-details">{log.details}</div>}
-                        <div className="audit-timestamp">
-                          {formatDate(log.timestamp)}
-                        </div>
+                <div className="expanded-columns">
+                  <div className="expanded-col">
+                    <h4>Auditi logi</h4>
+                    {loadingAudit[request.id] ? (
+                      <div className="loading-audit">Laadimine...</div>
+                    ) : auditLogs[request.id] && auditLogs[request.id].length > 0 ? (
+                      <div className="audit-trail">
+                        {auditLogs[request.id].map(log => (
+                          <div key={log.id} className="audit-entry">
+                            <div className="audit-header">
+                              <strong>{log.userName}</strong>
+                              <span className="audit-action">{log.action}</span>
+                            </div>
+                            {log.details && <div className="audit-details">{log.details}</div>}
+                            <div className="audit-timestamp">
+                              {formatDate(log.timestamp)}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="no-audit">Auditi logid puuduvad</div>
+                    )}
                   </div>
-                ) : (
-                  <div className="no-audit">Auditi logid puuduvad</div>
-                )}
+                  <div className="expanded-col">
+                    <CommentThread requestId={request.id} isAdmin={false} />
+                  </div>
+                </div>
               </div>
             )}
           </div>

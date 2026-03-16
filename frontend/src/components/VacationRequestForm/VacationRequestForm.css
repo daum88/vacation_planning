@@ -44,6 +44,16 @@
   color: #7a0000;
 }
 
+.capacity-warning {
+  background: #fff8ec;
+  border: 1px solid #ffd280;
+  border-left: 3px solid #f5a623;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #6b3a00;
+}
+
 .blackout-item {
   margin-top: 4px;
   padding-left: 8px;
