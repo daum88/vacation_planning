@@ -225,72 +225,58 @@ function AppContent() {
 
       <main className="app-main">
         <div className="container">
-          {/* User Context + Key Metric */}
-          {currentUser && (
-            <section className="user-info-card">
-              <div className="user-details">
-                <strong>{currentUser.fullName}</strong>
-                <span>{currentUser.department} • {currentUser.position}</span>
-                <button className="quick-cta" onClick={scrollToForm}>Taotle puhkust</button>
-              </div>
-
-              <div className="user-balance">
-                <div className="balance-primary">
-                  <span className="stat-value">{currentUser.remainingLeaveDays}</span>
-                  <span className="stat-label">päeva alles</span>
-                </div>
-
-                <div className="balance-meta">
-                  <div className="balance-stat">
-                    <span className="stat-value-sm">{currentUser.usedLeaveDays}</span>
-                    <span className="stat-label">kasutatud</span>
-                  </div>
-                  <div className="balance-stat">
-                    <span className="stat-value-sm">{currentUser.annualLeaveDays}</span>
-                    <span className="stat-label">aastas</span>
-                  </div>
-                </div>
-
-                <div className="balance-progress">
-                  <div
-                    className="balance-progress-fill"
-                    style={{ width: `${Math.min(100, Math.max(0, (currentUser.usedLeaveDays / Math.max(1, currentUser.annualLeaveDays)) * 100))}%` }}
-                  />
-                </div>
-              </div>
-            </section>
-          )}
-
           {userRole !== 'admin' && currentUser && (
-            <section className="momentum-row">
-              <article className="momentum-card sand">
-                <div className="momentum-title">Järgmine planeeritud puhkus</div>
-                <div className="momentum-value">
-                  {overview.upcoming
-                    ? `${new Date(overview.upcoming.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – ${new Date(overview.upcoming.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}`
-                    : 'Pole veel planeeritud'}
-                </div>
-                <div className="momentum-note">
-                  {overview.upcoming ? overview.upcoming.leaveTypeName || 'Puhkus' : 'Lisa taotlus, et kuupäevad lukku panna.'}
-                </div>
-              </article>
+            <>
+              <section className="overview-grid">
+                <article className="overview-main">
+                  <div className="overview-eyebrow">Sinu töölaud</div>
+                  <h2>{currentUser.firstName}, tere tagasi.</h2>
+                  <p>{currentUser.department} • {currentUser.position}</p>
+                  <button className="quick-cta" onClick={scrollToForm}>Uus taotlus</button>
+                </article>
 
-              <article className="momentum-card mint">
-                <div className="momentum-title">Taotluste seis</div>
-                <div className="mini-stats">
-                  <div><strong>{overview.pending}</strong><span>ootel</span></div>
-                  <div><strong>{overview.approved}</strong><span>kinnitatud</span></div>
-                  <div><strong>{requests.length}</strong><span>kokku</span></div>
-                </div>
-              </article>
+                <article className="overview-balance">
+                  <div className="overview-balance-top">
+                    <span className="overview-balance-value">{currentUser.remainingLeaveDays}</span>
+                    <span className="overview-balance-label">päeva alles</span>
+                  </div>
 
-              <article className="momentum-card lilac">
-                <div className="momentum-title">Nutikas vihje</div>
-                <div className="momentum-note">
-                  Puhkused kinnitatakse kiiremini, kui lisad kommentaari ja valid kuupäevad varakult.
-                </div>
-              </article>
-            </section>
+                  <div className="overview-balance-meta">
+                    <div><strong>{currentUser.usedLeaveDays}</strong><span>kasutatud</span></div>
+                    <div><strong>{currentUser.annualLeaveDays}</strong><span>aastas</span></div>
+                    <div><strong>{overview.pending}</strong><span>ootel</span></div>
+                  </div>
+
+                  <div className="balance-progress">
+                    <div
+                      className="balance-progress-fill"
+                      style={{ width: `${Math.min(100, Math.max(0, (currentUser.usedLeaveDays / Math.max(1, currentUser.annualLeaveDays)) * 100))}%` }}
+                    />
+                  </div>
+                </article>
+              </section>
+
+              <section className="overview-strip">
+                <article className="strip-card upcoming">
+                  <span>Järgmine puhkus</span>
+                  <strong>
+                    {overview.upcoming
+                      ? `${new Date(overview.upcoming.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – ${new Date(overview.upcoming.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}`
+                      : 'Planeering puudub'}
+                  </strong>
+                  <small>{overview.upcoming ? (overview.upcoming.leaveTypeName || 'Puhkus') : 'Lisa taotlus, et kuupäevad lukku panna.'}</small>
+                </article>
+
+                <article className="strip-card status">
+                  <span>Taotluste seis</span>
+                  <div className="strip-stats">
+                    <div><strong>{overview.pending}</strong><small>ootel</small></div>
+                    <div><strong>{overview.approved}</strong><small>kinnitatud</small></div>
+                    <div><strong>{requests.length}</strong><small>kokku</small></div>
+                  </div>
+                </article>
+              </section>
+            </>
           )}
 
           {userRole === 'admin' ? (
