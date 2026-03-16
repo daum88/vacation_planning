@@ -131,12 +131,13 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
       ...prev,
       [name]: value
     }));
-    // Clear error for this field
-    setErrors(prev => ({
-      ...prev,
-      [name]: undefined,
-      general: undefined
-    }));
+    // Properly remove the key so Object.keys(errors).length stays accurate
+    setErrors(prev => {
+      const next = { ...prev };
+      delete next[name];
+      delete next.general;
+      return next;
+    });
   };
 
   const handleFileSelect = (e) => {
