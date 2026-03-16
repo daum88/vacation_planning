@@ -242,7 +242,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   return (
     <div className="vacation-request-form-container">
       <div className="form-header">
-        <h2>{editRequest ? '✏️ Muuda taotlust' : '➕ Uus puhkusetaotlus'}</h2>
+        <h2>{editRequest ? 'Muuda taotlust' : 'Uus puhkusetaotlus'}</h2>
         {userBalance && (
           <div className="balance-widget">
             <div className="balance-item">
@@ -259,13 +259,13 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
       <form onSubmit={handleSubmit} className="vacation-request-form">
         {errors.general && (
           <div className="form-error-banner">
-            ⚠️ {errors.general}
+            {errors.general}
           </div>
         )}
 
         <div className="form-group">
           <label htmlFor="leaveTypeId" className="form-label">
-            Puhkuse tüüp *
+            Puhkuse liik *
           </label>
           <select
             id="leaveTypeId"
@@ -285,10 +285,10 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             <div className="leave-type-info" style={{ borderLeftColor: selectedLeaveType.color }}>
               {selectedLeaveType.description}
               {selectedLeaveType.requiresAttachment && (
-                <div className="info-badge">📎 Manus nõutud</div>
+                <div className="info-badge">Manus nõutud</div>
               )}
               {!selectedLeaveType.requiresApproval && (
-                <div className="info-badge success">✓ Automaatne kinnitamine</div>
+                <div className="info-badge success">Automaatne kinnitamine</div>
               )}
             </div>
           )}
@@ -333,13 +333,18 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
 
         {daysCount > 0 && (
           <div className="days-indicator">
-            <span className="days-badge">{daysCount} {daysCount === 1 ? 'päev' : 'päeva'}</span>
+            <span className="days-badge">Valitud: {daysCount} {daysCount === 1 ? 'päev' : 'päeva'}</span>
+            {selectedLeaveType?.isPaid && userBalance && (
+              <span className="days-remaining-preview">
+                Pärast taotlust jääb: {Math.max(0, userBalance.remainingLeaveDays - daysCount)} päeva
+              </span>
+            )}
           </div>
         )}
 
         {conflicts && conflicts.hasConflicts && (
           <div className="conflicts-warning">
-            <strong>⚠️ Meeskonna konfliktid:</strong>
+            <strong>Meeskonna konfliktid:</strong>
             <p>{conflicts.conflictCount} inimest on sellel perioodil juba puhkusel:</p>
             <ul>
               {conflicts.conflicts.map((conflict, idx) => (
@@ -353,7 +358,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
 
         <div className="form-group">
           <label htmlFor="comment" className="form-label">
-            Kommentaar (valikuline)
+            Lisa kommentaar (valikuline)
           </label>
           <textarea
             id="comment"
@@ -385,7 +390,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
                 disabled={loading}
               />
               <label htmlFor="fileInput" className="file-upload-button">
-                📎 Lisa failid
+                Lisa failid
               </label>
               <span className="file-hint">PDF, pildid, Word (max 10MB)</span>
             </div>
@@ -428,7 +433,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             className="btn-primary"
             disabled={loading || Object.keys(errors).length > 0}
           >
-            {loading ? 'Salvestamine...' : editRequest ? 'Uuenda taotlust' : 'Loo taotlus'}
+            {loading ? 'Salvestamine...' : editRequest ? 'Uuenda taotlust' : 'Taotle puhkust'}
           </button>
         </div>
       </form>

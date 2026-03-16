@@ -7,10 +7,23 @@
   --color-text-primary: #1D1D1F;
   --color-text-secondary: #6E6E73;
   --color-accent: #0071E3;
-  
+
   /* Borders */
   --color-border: #E5E5E7;
-  
+
+  /* Legacy aliases (so older component CSS still works) */
+  --color-bg-primary: var(--color-bg);
+  --color-bg-secondary: var(--color-card);
+  --color-surface: var(--color-card);
+  --color-divider: var(--color-border);
+  --color-text-tertiary: #8E8E93;
+  --color-text-disabled: #A1A1A6;
+  --color-success: #34C759;
+  --color-warning: #FF9500;
+  --color-error: #FF3B30;
+  --color-accent-hover: #0057B8;
+  --color-accent-light: rgba(0, 113, 227, 0.12);
+
   /* Consistent Spacing System */
   --space-xs: 6px;
   --space-sm: 8px;
@@ -18,6 +31,39 @@
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
+
+  /* Legacy spacing aliases */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Legacy radius/shadow/typography aliases */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 6px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.10);
+  --transition-fast: 120ms ease;
+  --transition-base: 150ms ease;
+  --transition-slow: 220ms ease;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-page-title: 28px;
+  --font-size-section-title: 22px;
+  --font-size-card-title: 18px;
+  --font-size-body: 15px;
+  --font-size-small: 13px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 }
 
 * {

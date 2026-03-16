@@ -110,10 +110,10 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                 </div>
                 {request.status && (
                   <div className={`status-badge-small ${request.status.toLowerCase()}`}>
-                    {request.status === 'Pending' && '⏳ Ootel'}
-                    {request.status === 'Approved' && '✓ Kinnitatud'}
-                    {request.status === 'Rejected' && '✗ Tagasi lükatud'}
-                    {request.status === 'Withdrawn' && '↩ Tagasi võetud'}
+                    {request.status === 'Pending' && 'Ootel'}
+                    {request.status === 'Approved' && 'Kinnitatud'}
+                    {request.status === 'Rejected' && 'Tagasi lükatud'}
+                    {request.status === 'Withdrawn' && 'Tagasi võetud'}
                   </div>
                 )}
               </div>
@@ -154,7 +154,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                 <div className="attachments-list">
                   {request.attachments.map(attachment => (
                     <div key={attachment.id} className="attachment-item">
-                      <span className="attachment-icon">📎</span>
+                      <span className="attachment-icon">Fail</span>
                       <span className="attachment-name">{attachment.fileName}</span>
                       <span className="attachment-size">
                         ({(attachment.fileSize / 1024).toFixed(1)} KB)
@@ -165,7 +165,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                           className="btn-attachment-action"
                           title="Laadi alla"
                         >
-                          ⬇
+↓
                         </button>
                         {request.canDelete && (
                           <button
@@ -173,7 +173,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                             className="btn-attachment-delete"
                             title="Kustuta"
                           >
-                            🗑️
+×
                           </button>
                         )}
                       </div>
@@ -198,7 +198,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                   onClick={() => onEdit(request)}
                   className="btn btn-edit"
                 >
-                  ✏️ Muuda
+Muuda
                 </button>
               )}
               {request.canWithdraw && (
@@ -206,7 +206,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                   onClick={() => onWithdraw(request.id)}
                   className="btn btn-withdraw"
                 >
-                  ↩ Võta tagasi
+Võta tagasi
                 </button>
               )}
               {request.canDelete && (
@@ -214,7 +214,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                   onClick={() => onDelete(request.id)}
                   className="btn btn-delete"
                 >
-                  🗑️ Kustuta
+Kustuta
                 </button>
               )}
               <button
@@ -228,7 +228,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
             {/* Expanded Section - Audit Trail */}
             {expandedRequest === request.id && (
               <div className="expanded-section">
-                <h4>📋 Auditi logi</h4>
+                <h4>Auditi logi</h4>
                 {loadingAudit[request.id] ? (
                   <div className="loading-audit">Laadimine...</div>
                 ) : auditLogs[request.id] && auditLogs[request.id].length > 0 ? (

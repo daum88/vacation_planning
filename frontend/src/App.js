@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VacationRequestForm from './components/VacationRequestForm/VacationRequestForm';
 import VacationRequestList from './components/VacationRequestList/VacationRequestList';
 import Statistics from './components/Statistics/Statistics';
@@ -18,6 +18,7 @@ function AppContent() {
   const [userRole, setUserRoleState] = useState(getCurrentRole());
   const [selectedUserId, setSelectedUserId] = useState(parseInt(getCurrentUserId()));
   const toast = useToast();
+  const formSectionRef = useRef(null);
 
   useEffect(() => {
     fetchUsers();
@@ -127,6 +128,10 @@ function AppContent() {
     fetchCurrentUser();
   };
 
+  const scrollToForm = () => {
+    formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const renderEmployeeView = () => {
     switch (currentView) {
       case 'statistics':
@@ -136,11 +141,13 @@ function AppContent() {
       default:
         return (
           <>
-            <VacationRequestForm
-              onSuccess={handleSuccess}
-              editRequest={editingRequest}
-              onCancel={handleCancelEdit}
-            />
+            <section ref={formSectionRef} className="primary-action-section">
+              <VacationRequestForm
+                onSuccess={handleSuccess}
+                editRequest={editingRequest}
+                onCancel={handleCancelEdit}
+              />
+            </section>
             <VacationRequestList
               requests={requests}
               onEdit={handleEdit}
@@ -158,8 +165,8 @@ function AppContent() {
       <header className="app-header">
         <div className="header-content">
           <div className="header-left">
-            <h1>🏖️ Puhkusetaotlused</h1>
-            <p>Halda oma puhkusesoove lihtsalt ja mugavalt</p>
+            <h1>Puhkusetaotlused</h1>
+            <p>Halda puhkusesoove lihtsalt ja selgelt</p>
           </div>
           
           <div className="header-controls">
@@ -175,7 +182,7 @@ function AppContent() {
                 >
                   {users.map(user => (
                     <option key={user.id} value={user.id}>
-                      {user.fullName} {user.isAdmin && '👔'}
+                      {user.fullName} {user.isAdmin && '(Admin)'}
                     </option>
                   ))}
                 </select>
@@ -188,13 +195,13 @@ function AppContent() {
                 className={`role-btn ${userRole === 'employee' ? 'active' : ''}`}
                 onClick={() => handleRoleSwitch('employee')}
               >
-                👤 Töötaja
+Töötaja
               </button>
               <button
                 className={`role-btn ${userRole === 'admin' ? 'active' : ''}`}
                 onClick={() => handleRoleSwitch('admin')}
               >
-                👔 Admin
+Admin
               </button>
             </div>
           </div>
@@ -203,28 +210,40 @@ function AppContent() {
 
       <main className="app-main">
         <div className="container">
-          {/* User Info Card */}
+          {/* User Context + Key Metric */}
           {currentUser && (
-            <div className="user-info-card">
+            <section className="user-info-card">
               <div className="user-details">
                 <strong>{currentUser.fullName}</strong>
                 <span>{currentUser.department} • {currentUser.position}</span>
+                <button className="quick-cta" onClick={scrollToForm}>Taotle puhkust</button>
               </div>
+
               <div className="user-balance">
-                <div className="balance-stat">
+                <div className="balance-primary">
                   <span className="stat-value">{currentUser.remainingLeaveDays}</span>
-                  <span className="stat-label">jääk</span>
+                  <span className="stat-label">päeva alles</span>
                 </div>
-                <div className="balance-stat">
-                  <span className="stat-value">{currentUser.usedLeaveDays}</span>
-                  <span className="stat-label">kasutatud</span>
+
+                <div className="balance-meta">
+                  <div className="balance-stat">
+                    <span className="stat-value-sm">{currentUser.usedLeaveDays}</span>
+                    <span className="stat-label">kasutatud</span>
+                  </div>
+                  <div className="balance-stat">
+                    <span className="stat-value-sm">{currentUser.annualLeaveDays}</span>
+                    <span className="stat-label">aastas</span>
+                  </div>
                 </div>
-                <div className="balance-stat">
-                  <span className="stat-value">{currentUser.annualLeaveDays}</span>
-                  <span className="stat-label">aastane</span>
+
+                <div className="balance-progress">
+                  <div
+                    className="balance-progress-fill"
+                    style={{ width: `${Math.min(100, Math.max(0, (currentUser.usedLeaveDays / Math.max(1, currentUser.annualLeaveDays)) * 100))}%` }}
+                  />
                 </div>
               </div>
-            </div>
+            </section>
           )}
 
           {userRole === 'admin' ? (
@@ -236,19 +255,19 @@ function AppContent() {
                   className={`toggle-btn ${currentView === 'requests' ? 'active' : ''}`}
                   onClick={() => setCurrentView('requests')}
                 >
-                  📝 Taotlused
+Taotlused
                 </button>
                 <button
                   className={`toggle-btn ${currentView === 'statistics' ? 'active' : ''}`}
                   onClick={() => setCurrentView('statistics')}
                 >
-                  📊 Statistika
+Statistika
                 </button>
                 <button
                   className={`toggle-btn ${currentView === 'calendar' ? 'active' : ''}`}
                   onClick={() => setCurrentView('calendar')}
                 >
-                  📅 Kalender
+Kalender
                 </button>
               </div>
 
