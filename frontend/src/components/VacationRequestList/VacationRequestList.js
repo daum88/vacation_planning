@@ -29,7 +29,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
       <h2>Minu puhkusetaotlused</h2>
       <div className="requests-grid">
         {requests.map((request) => (
-          <div key={request.id} className="request-card">
+          <div key={request.id} className={`request-card status-${request.status?.toLowerCase() || 'pending'}`}>
             <div className="request-header">
               <div className="request-dates">
                 <div className="date-item">
@@ -42,8 +42,17 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
                   <span className="date-value">{formatDate(request.endDate)}</span>
                 </div>
               </div>
-              <div className="days-badge">
-                {request.daysCount} {request.daysCount === 1 ? 'päev' : 'päeva'}
+              <div className="card-badges">
+                <div className="days-badge">
+                  {request.daysCount} {request.daysCount === 1 ? 'päev' : 'päeva'}
+                </div>
+                {request.status && (
+                  <div className={`status-badge-small ${request.status.toLowerCase()}`}>
+                    {request.status === 'Pending' && '⏳ Ootel'}
+                    {request.status === 'Approved' && '✓ Kinnitatud'}
+                    {request.status === 'Rejected' && '✗ Tagasi lükatud'}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -51,6 +60,16 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
               <div className="request-comment">
                 <strong>Kommentaar:</strong>
                 <p>{request.comment}</p>
+              </div>
+            )}
+
+            {request.adminComment && (
+              <div className="admin-response">
+                <strong>Admin vastus:</strong>
+                <p>{request.adminComment}</p>
+                {request.approvedAt && (
+                  <small>Vastatud: {formatDate(request.approvedAt)}</small>
+                )}
               </div>
             )}
 
@@ -62,12 +81,14 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
             </div>
 
             <div className="request-actions">
-              <button
-                onClick={() => onEdit(request)}
-                className="btn btn-edit"
-              >
-                Muuda
-              </button>
+              {request.status === 'Pending' && (
+                <button
+                  onClick={() => onEdit(request)}
+                  className="btn btn-edit"
+                >
+                  Muuda
+                </button>
+              )}
               <button
                 onClick={() => onDelete(request.id)}
                 className="btn btn-delete"

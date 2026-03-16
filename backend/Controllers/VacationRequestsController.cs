@@ -435,6 +435,113 @@ namespace VacationRequestApi.Controllers
             }
         }
 
+        // ADMIN ENDPOINTS
+
+        // GET: api/VacationRequests/admin/all
+        [HttpGet("admin/all")]
+        public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetAllVacationRequestsAdmin()
+        {
+            try
+            {
+                var requests = await _context.VacationRequests
+                    .OrderByDescending(vr => vr.CreatedAt)
+                    .ToListAsync();
+
+                _logger.LogInformation("Admin retrieved {Count} vacation requests", requests.Count);
+                return Ok(requests.Select(MapToResponseDto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all vacation requests for admin");
+                return StatusCode(500, new { message = "Viga andmete laadimisel." });
+            }
+        }
+
+        // GET: api/VacationRequests/admin/pending
+        [HttpGet("admin/pending")]
+        public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetPendingVacationRequestsAdmin()
+        {
+            try
+            {
+                var requests = await _context.VacationRequests
+                    .Where(vr => vr.Status == VacationRequestStatus.Pending)
+                    .OrderBy(vr => vr.StartDate)
+                    .ToListAsync();
+
+                _logger.LogInformation("Admin retrieved {Count} pending vacation requests", requests.Count);
+                return Ok(requests.Select(MapToResponseDto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pending vacation requests for admin");
+                return StatusCode(500, new { message = "Viga andmete laadimisel." });
+            }
+        }
+
+        // POST: api/VacationRequests/admin/approve/{id}
+        [HttpPost("admin/approve/{id}")]
+        public async Task<IActionResult> ApproveVacationRequest(int id, [FromBody] ApprovalDto dto)
+        {
+            try
+            {
+                var vacationRequest = await _context.VacationRequests.FindAsync(id);
+
+                if (vacationRequest == null)
+                {
+                    return NotFound(new { message = "Taotlust ei leitud." });
+                }
+
+                if (vacationRequest.Status != VacationRequestStatus.Pending)
+                {
+                    return BadRequest(new { message = "Ainult ootel taotlusi saab kinnitada või tagasi lükata." });
+                }
+
+                vacationRequest.Status = dto.Approved ? VacationRequestStatus.Approved : VacationRequestStatus.Rejected;
+                vacationRequest.ApprovedByUserId = 999; // Admin user ID (hardcoded)
+                vacationRequest.ApprovedAt = DateTime.UtcNow;
+                vacationRequest.AdminComment = dto.AdminComment?.Trim();
+                vacationRequest.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                var statusText = dto.Approved ? "kinnitatud" : "tagasi lükatud";
+                _logger.LogInformation("Vacation request {Id} was {Status} by admin", id, statusText);
+
+                return Ok(MapToResponseDto(vacationRequest));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving/rejecting vacation request {Id}", id);
+                return StatusCode(500, new { message = "Viga taotluse kinnitamisel." });
+            }
+        }
+
+        // DELETE: api/VacationRequests/admin/{id}
+        [HttpDelete("admin/{id}")]
+        public async Task<IActionResult> DeleteVacationRequestAdmin(int id)
+        {
+            try
+            {
+                var vacationRequest = await _context.VacationRequests.FindAsync(id);
+                if (vacationRequest == null)
+                {
+                    return NotFound();
+                }
+
+                _context.VacationRequests.Remove(vacationRequest);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Admin deleted vacation request {Id}", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting vacation request {Id} (admin)", id);
+                return StatusCode(500, new { message = "Viga taotluse kustutamisel." });
+            }
+        }
+
         private static VacationRequestResponseDto MapToResponseDto(VacationRequest request)
         {
             return new VacationRequestResponseDto
@@ -444,6 +551,10 @@ namespace VacationRequestApi.Controllers
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 Comment = request.Comment,
+                Status = request.Status.ToString(),
+                ApprovedByUserId = request.ApprovedByUserId,
+                ApprovedAt = request.ApprovedAt,
+                AdminComment = request.AdminComment,
                 DaysCount = (request.EndDate.Date - request.StartDate.Date).Days + 1, // +1 to include both days
                 CreatedAt = request.CreatedAt,
                 UpdatedAt = request.UpdatedAt
@@ -451,3 +562,4 @@ namespace VacationRequestApi.Controllers
         }
     }
 }
+

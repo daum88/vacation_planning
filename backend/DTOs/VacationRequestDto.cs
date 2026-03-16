@@ -22,7 +22,20 @@ namespace VacationRequestApi.DTOs
         public DateTime EndDate { get; set; }
         public string? Comment { get; set; }
         public int DaysCount { get; set; }
+        public string Status { get; set; } = "Pending";
+        public int? ApprovedByUserId { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public string? AdminComment { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+    }
+
+    public class ApprovalDto
+    {
+        [Required]
+        public bool Approved { get; set; }
+
+        [MaxLength(500)]
+        public string? AdminComment { get; set; }
     }
 }

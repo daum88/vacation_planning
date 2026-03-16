@@ -23,6 +23,8 @@ namespace VacationRequestApi.Data
                 entity.Property(e => e.StartDate).IsRequired();
                 entity.Property(e => e.EndDate).IsRequired();
                 entity.Property(e => e.Comment).HasMaxLength(500);
+                entity.Property(e => e.Status).IsRequired().HasDefaultValue(VacationRequestStatus.Pending);
+                entity.Property(e => e.AdminComment).HasMaxLength(500);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
                 

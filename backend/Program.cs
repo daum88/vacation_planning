@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VacationRequestApi.Data;
+using VacationRequestApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
+
+// Register services
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Configure SQLite database
 builder.Services.AddDbContext<VacationRequestContext>(options =>

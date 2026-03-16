@@ -26,6 +26,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.header-left {
+  flex: 1;
 }
 
 .app-header h1 {
@@ -36,6 +41,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin: 0;
 }
 
 .app-header p {
@@ -43,6 +49,47 @@
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-regular);
   margin-top: var(--space-1);
+  margin-bottom: 0;
+}
+
+/* Role Switcher */
+.role-switcher {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--color-bg-secondary);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-divider);
+}
+
+.role-btn {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  background: transparent;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  font-family: var(--font-family);
+}
+
+.role-btn:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--color-text-primary);
+}
+
+.role-btn.active {
+  background: var(--color-accent);
+  color: white;
+  box-shadow: var(--shadow-button);
+}
+
+.role-btn:active {
+  transform: scale(0.98);
 }
 
 /* Main Content Area */
@@ -110,9 +157,16 @@
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-8);
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
   gap: var(--space-4);
   box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.global-error div {
+  flex: 1;
+  min-width: 250px;
 }
 
 .global-error strong {
@@ -126,7 +180,7 @@
 
 .global-error p {
   color: var(--color-text-secondary);
-  margin: 0;
+  margin: var(--space-2) 0 0 0;
 }
 
 .retry-button {
@@ -180,12 +234,33 @@
 }
 
 @media (max-width: 640px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .header-left {
+    text-align: center;
+  }
+
   .app-header h1 {
     font-size: 18px;
+    justify-content: center;
   }
 
   .app-header p {
     display: none;
+  }
+
+  .role-switcher {
+    width: 100%;
+  }
+
+  .role-btn {
+    flex: 1;
+    justify-content: center;
   }
 
   .app-main {
@@ -204,6 +279,11 @@
 
   .global-error {
     padding: var(--space-4);
+    flex-direction: column;
+  }
+
+  .global-error div {
+    min-width: auto;
   }
 }
 
