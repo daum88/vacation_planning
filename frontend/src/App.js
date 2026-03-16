@@ -226,57 +226,28 @@ function AppContent() {
       <main className="app-main">
         <div className="container">
           {userRole !== 'admin' && currentUser && (
-            <>
-              <section className="overview-grid">
-                <article className="overview-main">
-                  <div className="overview-eyebrow">Sinu töölaud</div>
-                  <h2>{currentUser.firstName}, tere tagasi.</h2>
+            <section className="top-summary">
+              <div className="top-summary-head">
+                <div>
+                  <h2>{currentUser.fullName}</h2>
                   <p>{currentUser.department} • {currentUser.position}</p>
-                  <button className="quick-cta" onClick={scrollToForm}>Uus taotlus</button>
-                </article>
+                </div>
+                <button className="quick-cta" onClick={scrollToForm}>Uus taotlus</button>
+              </div>
 
-                <article className="overview-balance">
-                  <div className="overview-balance-top">
-                    <span className="overview-balance-value">{currentUser.remainingLeaveDays}</span>
-                    <span className="overview-balance-label">päeva alles</span>
-                  </div>
+              <div className="balance-strip">
+                <div className="balance-strip-item"><span>Alles</span><strong>{currentUser.remainingLeaveDays}</strong></div>
+                <div className="balance-strip-item"><span>Kasutatud</span><strong>{currentUser.usedLeaveDays}</strong></div>
+                <div className="balance-strip-item"><span>Aastas</span><strong>{currentUser.annualLeaveDays}</strong></div>
+                <div className="balance-strip-item"><span>Ootel</span><strong>{overview.pending}</strong></div>
+              </div>
 
-                  <div className="overview-balance-meta">
-                    <div><strong>{currentUser.usedLeaveDays}</strong><span>kasutatud</span></div>
-                    <div><strong>{currentUser.annualLeaveDays}</strong><span>aastas</span></div>
-                    <div><strong>{overview.pending}</strong><span>ootel</span></div>
-                  </div>
-
-                  <div className="balance-progress">
-                    <div
-                      className="balance-progress-fill"
-                      style={{ width: `${Math.min(100, Math.max(0, (currentUser.usedLeaveDays / Math.max(1, currentUser.annualLeaveDays)) * 100))}%` }}
-                    />
-                  </div>
-                </article>
-              </section>
-
-              <section className="overview-strip">
-                <article className="strip-card upcoming">
-                  <span>Järgmine puhkus</span>
-                  <strong>
-                    {overview.upcoming
-                      ? `${new Date(overview.upcoming.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – ${new Date(overview.upcoming.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}`
-                      : 'Planeering puudub'}
-                  </strong>
-                  <small>{overview.upcoming ? (overview.upcoming.leaveTypeName || 'Puhkus') : 'Lisa taotlus, et kuupäevad lukku panna.'}</small>
-                </article>
-
-                <article className="strip-card status">
-                  <span>Taotluste seis</span>
-                  <div className="strip-stats">
-                    <div><strong>{overview.pending}</strong><small>ootel</small></div>
-                    <div><strong>{overview.approved}</strong><small>kinnitatud</small></div>
-                    <div><strong>{requests.length}</strong><small>kokku</small></div>
-                  </div>
-                </article>
-              </section>
-            </>
+              <div className="top-summary-note">
+                {overview.upcoming
+                  ? `Järgmine planeeritud puhkus: ${new Date(overview.upcoming.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – ${new Date(overview.upcoming.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}`
+                  : 'Sul pole hetkel planeeritud puhkust.'}
+              </div>
+            </section>
           )}
 
           {userRole === 'admin' ? (
