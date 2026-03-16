@@ -165,7 +165,11 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     });
 
     setSelectedFiles(prev => [...prev, ...validFiles]);
-    setErrors(prev => ({ ...prev, files: undefined }));
+    setErrors(prev => {
+      const next = { ...prev };
+      delete next.files;
+      return next;
+    });
   };
 
   const removeFile = (index) => {

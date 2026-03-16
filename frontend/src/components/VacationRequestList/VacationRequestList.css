@@ -306,3 +306,24 @@
   .request-meta { flex-direction: column; }
   .request-actions .btn { flex: 1 1 calc(50% - 6px); }
 }
+
+.confirm-inline-label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  align-self: center;
+}
+
+.btn-cancel-inline {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel-inline:hover {
+  background: #f3f4f8;
+}

@@ -87,30 +87,26 @@ function AppContent() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Kas oled kindel, et soovid selle taotluse kustutada?')) {
-      try {
-        await vacationRequestsApi.delete(id);
-        toast.success('Taotlus kustutatud ✓');
-        fetchRequests();
-        fetchCurrentUser(); // Refresh balance
-      } catch (error) {
-        console.error('Error deleting request:', error);
-        toast.error(error.response?.data?.message || 'Viga taotluse kustutamisel');
-      }
+    try {
+      await vacationRequestsApi.delete(id);
+      toast.success('Taotlus kustutatud');
+      fetchRequests();
+      fetchCurrentUser();
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      toast.error(error.response?.data?.message || 'Viga taotluse kustutamisel');
     }
   };
 
   const handleWithdraw = async (id) => {
-    if (window.confirm('Kas oled kindel, et soovid selle taotluse tagasi võtta?')) {
-      try {
-        await vacationRequestsApi.withdraw(id);
-        toast.success('Taotlus tagasi võetud ✓');
-        fetchRequests();
-        fetchCurrentUser(); // Refresh balance
-      } catch (error) {
-        console.error('Error withdrawing request:', error);
-        toast.error(error.response?.data?.message || 'Viga taotluse tagasivõtmisel');
-      }
+    try {
+      await vacationRequestsApi.withdraw(id);
+      toast.success('Taotlus tagasi võetud');
+      fetchRequests();
+      fetchCurrentUser();
+    } catch (error) {
+      console.error('Error withdrawing request:', error);
+      toast.error(error.response?.data?.message || 'Viga taotluse tagasivõtmisel');
     }
   };
 

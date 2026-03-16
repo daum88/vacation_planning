@@ -393,3 +393,27 @@
     transform: translateY(0);
   }
 }
+
+.confirm-delete-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.btn-delete-confirm {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: 1px solid #ffb3b3;
+  background: #fff0f0;
+  color: var(--color-error);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-delete-confirm:hover {
+  background: #ffe0e0;
+}

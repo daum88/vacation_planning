@@ -8,6 +8,8 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [auditLogs, setAuditLogs] = useState({});
   const [loadingAudit, setLoadingAudit] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(null);
   const toast = useToast();
 
   const summary = useMemo(() => {
@@ -59,15 +61,12 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
   };
 
   const handleDeleteAttachment = async (requestId, attachmentId) => {
-    if (window.confirm('Kas oled kindel, et soovid selle manuse kustutada?')) {
-      try {
-        await vacationRequestsApi.deleteAttachment(requestId, attachmentId);
-        toast.success('Manus kustutatud ✓');
-        // Refresh would be handled by parent component
-      } catch (err) {
-        console.error('Error deleting attachment:', err);
-        toast.error('Viga manuse kustutamisel');
-      }
+    try {
+      await vacationRequestsApi.deleteAttachment(requestId, attachmentId);
+      toast.success('Manus kustutatud');
+    } catch (err) {
+      console.error('Error deleting attachment:', err);
+      toast.error('Viga manuse kustutamisel');
     }
   };
 
@@ -215,34 +214,38 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
             {/* Actions */}
             <div className="request-actions">
               {request.canEdit && (
-                <button
-                  onClick={() => onEdit(request)}
-                  className="btn btn-edit"
-                >
-Muuda
+                <button onClick={() => onEdit(request)} className="btn btn-edit">
+                  Muuda
                 </button>
               )}
               {request.canWithdraw && (
-                <button
-                  onClick={() => onWithdraw(request.id)}
-                  className="btn btn-withdraw"
-                >
-Võta tagasi
-                </button>
+                confirmWithdraw === request.id ? (
+                  <>
+                    <span className="confirm-inline-label">Võta tagasi?</span>
+                    <button onClick={() => { onWithdraw(request.id); setConfirmWithdraw(null); }} className="btn btn-withdraw">Jah</button>
+                    <button onClick={() => setConfirmWithdraw(null)} className="btn btn-cancel-inline">Ei</button>
+                  </>
+                ) : (
+                  <button onClick={() => setConfirmWithdraw(request.id)} className="btn btn-withdraw">
+                    Võta tagasi
+                  </button>
+                )
               )}
               {request.canDelete && (
-                <button
-                  onClick={() => onDelete(request.id)}
-                  className="btn btn-delete"
-                >
-Kustuta
-                </button>
+                confirmDelete === request.id ? (
+                  <>
+                    <span className="confirm-inline-label">Kustuta?</span>
+                    <button onClick={() => { onDelete(request.id); setConfirmDelete(null); }} className="btn btn-delete">Jah</button>
+                    <button onClick={() => setConfirmDelete(null)} className="btn btn-cancel-inline">Ei</button>
+                  </>
+                ) : (
+                  <button onClick={() => setConfirmDelete(request.id)} className="btn btn-delete">
+                    Kustuta
+                  </button>
+                )
               )}
-              <button
-                onClick={() => toggleExpand(request.id)}
-                className="btn btn-expand"
-              >
-                {expandedRequest === request.id ? '▲ Vähenda' : '▼ Rohkem'}
+              <button onClick={() => toggleExpand(request.id)} className="btn btn-expand">
+                {expandedRequest === request.id ? 'Vähenda' : 'Rohkem'}
               </button>
             </div>
 

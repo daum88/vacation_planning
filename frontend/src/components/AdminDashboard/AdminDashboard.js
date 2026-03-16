@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { vacationRequestsApi } from '../../api/api';
 import { formatDate } from '../../utils/dateUtils';
+import { useToast } from '../Toast/Toast';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -8,9 +9,11 @@ const AdminDashboard = () => {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [view, setView] = useState('pending'); // 'pending' or 'all'
+  const [view, setView] = useState('pending');
   const [approvingId, setApprovingId] = useState(null);
   const [adminComment, setAdminComment] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     fetchRequests();
@@ -42,25 +45,25 @@ const AdminDashboard = () => {
         approved,
         adminComment: adminComment || null
       });
-      
+      toast.success(approved ? 'Taotlus kinnitatud' : 'Taotlus tagasi lükatud');
       setAdminComment('');
       setApprovingId(null);
       fetchRequests();
     } catch (err) {
       console.error('Error approving request:', err);
-      alert(err.response?.data?.message || 'Viga kinnitamisel');
+      toast.error(err.response?.data?.message || 'Viga kinnitamisel');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Kas oled kindel, et soovid selle taotluse kustutada?')) {
-      try {
-        await vacationRequestsApi.deleteAdmin(id);
-        fetchRequests();
-      } catch (err) {
-        console.error('Error deleting request:', err);
-        alert(err.response?.data?.message || 'Viga kustutamisel');
-      }
+    try {
+      await vacationRequestsApi.deleteAdmin(id);
+      toast.success('Taotlus kustutatud');
+      setConfirmDelete(null);
+      fetchRequests();
+    } catch (err) {
+      console.error('Error deleting request:', err);
+      toast.error(err.response?.data?.message || 'Viga kustutamisel');
     }
   };
 
@@ -80,7 +83,7 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="admin-dashboard">
-        <h2>👔 Admin Juhtpaneel</h2>
+        <h2>Admin juhtpaneel</h2>
         <div className="loading">Laadimine...</div>
       </div>
     );
@@ -89,7 +92,7 @@ const AdminDashboard = () => {
   if (error) {
     return (
       <div className="admin-dashboard">
-        <h2>👔 Admin Juhtpaneel</h2>
+        <h2>Admin juhtpaneel</h2>
         <div className="error-box">{error}</div>
       </div>
     );
@@ -98,19 +101,19 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
-        <h2>👔 Admin Juhtpaneel</h2>
+        <h2>Admin juhtpaneel</h2>
         <div className="view-switcher">
           <button
             className={`view-btn ${view === 'pending' ? 'active' : ''}`}
             onClick={() => setView('pending')}
           >
-            ⏳ Ootel ({pendingRequests.length})
+            Ootel ({pendingRequests.length})
           </button>
           <button
             className={`view-btn ${view === 'all' ? 'active' : ''}`}
             onClick={() => setView('all')}
           >
-            📋 Kõik
+            Kõik
           </button>
         </div>
       </div>
@@ -167,13 +170,13 @@ const AdminDashboard = () => {
                           className="btn btn-approve"
                           onClick={() => handleApprove(request.id, true)}
                         >
-                          ✓ Kinnita
+                          Kinnita
                         </button>
                         <button
                           className="btn btn-reject"
                           onClick={() => handleApprove(request.id, false)}
                         >
-                          ✗ Lükka tagasi
+                          Lükka tagasi
                         </button>
                         <button
                           className="btn btn-cancel"
@@ -191,19 +194,31 @@ const AdminDashboard = () => {
                       className="btn btn-review"
                       onClick={() => setApprovingId(request.id)}
                     >
-                      📝 Vaata üle
+                      Vaata üle
                     </button>
                   )}
                 </div>
               )}
 
               <div className="admin-actions">
-                <button
-                  className="btn-delete-admin"
-                  onClick={() => handleDelete(request.id)}
-                >
-                  🗑️ Kustuta
-                </button>
+                {confirmDelete === request.id ? (
+                  <div className="confirm-delete-row">
+                    <span>Kindel?</span>
+                    <button className="btn btn-delete-confirm" onClick={() => handleDelete(request.id)}>
+                      Jah, kustuta
+                    </button>
+                    <button className="btn btn-cancel" onClick={() => setConfirmDelete(null)}>
+                      Tühista
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="btn-delete-admin"
+                    onClick={() => setConfirmDelete(request.id)}
+                  >
+                    Kustuta
+                  </button>
+                )}
               </div>
             </div>
           ))}
