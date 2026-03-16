@@ -242,18 +242,8 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   return (
     <div className="vacation-request-form-container">
       <div className="form-header">
-        <h2>{editRequest ? 'Muuda taotlust' : 'Uus puhkusetaotlus'}</h2>
-        {userBalance && (
-          <div className="balance-widget">
-            <div className="balance-item">
-              <span className="balance-label">Jääk:</span>
-              <span className="balance-value">{userBalance.remainingLeaveDays} päeva</span>
-            </div>
-            <div className="balance-details">
-              <small>Aastane: {userBalance.annualLeaveDays} | Kasutatud: {userBalance.usedLeaveDays}</small>
-            </div>
-          </div>
-        )}
+        <h2>{editRequest ? 'Muuda taotlust' : 'Uus puhkuse taotlus'}</h2>
+        <p className="form-subtitle">Planeeri kuupäevad, lisa kontekst ja saada taotlus kinnitamiseks.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="vacation-request-form">
@@ -263,7 +253,9 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           </div>
         )}
 
-        <div className="form-group">
+        <section className="form-section">
+          <div className="form-section-title">Puhkuse liik</div>
+          <div className="form-group">
           <label htmlFor="leaveTypeId" className="form-label">
             Puhkuse liik *
           </label>
@@ -294,7 +286,10 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           )}
           {errors.leaveTypeId && <span className="error-text">{errors.leaveTypeId}</span>}
         </div>
+        </section>
 
+        <section className="form-section">
+          <div className="form-section-title">Kuupäevad</div>
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="startDate" className="form-label">
@@ -357,7 +352,10 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             </ul>
           </div>
         )}
+        </section>
 
+        <section className="form-section">
+          <div className="form-section-title">Kommentaar</div>
         <div className="form-group">
           <label htmlFor="comment" className="form-label">
             Lisa kommentaar (valikuline)
@@ -376,8 +374,11 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           />
           <div className="char-count">{formData.comment.length}/500</div>
         </div>
+        </section>
 
         {!editRequest && (
+          <section className="form-section">
+            <div className="form-section-title">Manused</div>
           <div className="form-group">
             <label className="form-label">
               Manused {selectedLeaveType?.requiresAttachment && '*'}
@@ -418,26 +419,42 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
               </div>
             )}
           </div>
+          </section>
         )}
 
         <div className="form-actions">
-          {editRequest && (
+          <div className="submit-context">
+            {daysCount > 0 ? (
+              <>
+                <div>See taotlus kasutab: <strong>{daysCount} {daysCount === 1 ? 'päeva' : 'päeva'}</strong></div>
+                {selectedLeaveType?.isPaid && userBalance && (
+                  <div>Alles jääb: <strong>{Math.max(0, userBalance.remainingLeaveDays - daysCount)} päeva</strong></div>
+                )}
+              </>
+            ) : (
+              <div>Vali kuupäevad, et näha päevade arvu.</div>
+            )}
+          </div>
+
+          <div className="submit-buttons">
+            {editRequest && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="btn-secondary"
+                disabled={loading}
+              >
+                Tühista
+              </button>
+            )}
             <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="btn-secondary"
-              disabled={loading}
+              type="submit"
+              className="btn-primary"
+              disabled={loading || Object.keys(errors).length > 0}
             >
-              Tühista
+              {loading ? 'Salvestamine...' : editRequest ? 'Uuenda taotlust' : 'Taotle puhkust'}
             </button>
-          )}
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={loading || Object.keys(errors).length > 0}
-          >
-            {loading ? 'Salvestamine...' : editRequest ? 'Uuenda taotlust' : 'Taotle puhkust'}
-          </button>
+          </div>
         </div>
       </form>
     </div>

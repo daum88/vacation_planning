@@ -251,10 +251,81 @@
   font-weight: 700;
 }
 
+.momentum-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.momentum-card {
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.momentum-card.sand {
+  background: linear-gradient(180deg, #fff8ed 0%, #fff3df 100%);
+  border-color: #ffe3bf;
+}
+
+.momentum-card.mint {
+  background: linear-gradient(180deg, #effbf4 0%, #e3f7ec 100%);
+  border-color: #c9edd7;
+}
+
+.momentum-card.lilac {
+  background: linear-gradient(180deg, #f6f2ff 0%, #efe8ff 100%);
+  border-color: #e2d5ff;
+}
+
+.momentum-title {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.momentum-value {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--color-text-primary);
+}
+
+.momentum-note {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.mini-stats {
+  display: flex;
+  gap: 14px;
+}
+
+.mini-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-stats strong {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.mini-stats span {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
 .dashboard-flow {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 32px;
 }
 
 .app-footer {
@@ -317,5 +388,9 @@
   .view-toggle {
     width: 100%;
     overflow-x: auto;
+  }
+
+  .momentum-row {
+    grid-template-columns: 1fr;
   }
 }

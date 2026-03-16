@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import VacationRequestForm from './components/VacationRequestForm/VacationRequestForm';
 import VacationRequestList from './components/VacationRequestList/VacationRequestList';
 import Statistics from './components/Statistics/Statistics';
@@ -19,6 +19,16 @@ function AppContent() {
   const [selectedUserId, setSelectedUserId] = useState(parseInt(getCurrentUserId()));
   const toast = useToast();
   const formSectionRef = useRef(null);
+
+  const overview = useMemo(() => {
+    const pending = requests.filter(r => r.status === 'Pending').length;
+    const approved = requests.filter(r => r.status === 'Approved').length;
+    const upcoming = requests
+      .filter(r => r.status === 'Approved' && new Date(r.startDate) >= new Date())
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0];
+
+    return { pending, approved, upcoming };
+  }, [requests]);
 
   useEffect(() => {
     fetchUsers();
@@ -248,6 +258,38 @@ Admin
                   />
                 </div>
               </div>
+            </section>
+          )}
+
+          {userRole !== 'admin' && currentUser && (
+            <section className="momentum-row">
+              <article className="momentum-card sand">
+                <div className="momentum-title">Järgmine planeeritud puhkus</div>
+                <div className="momentum-value">
+                  {overview.upcoming
+                    ? `${new Date(overview.upcoming.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – ${new Date(overview.upcoming.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}`
+                    : 'Pole veel planeeritud'}
+                </div>
+                <div className="momentum-note">
+                  {overview.upcoming ? overview.upcoming.leaveTypeName || 'Puhkus' : 'Lisa taotlus, et kuupäevad lukku panna.'}
+                </div>
+              </article>
+
+              <article className="momentum-card mint">
+                <div className="momentum-title">Taotluste seis</div>
+                <div className="mini-stats">
+                  <div><strong>{overview.pending}</strong><span>ootel</span></div>
+                  <div><strong>{overview.approved}</strong><span>kinnitatud</span></div>
+                  <div><strong>{requests.length}</strong><span>kokku</span></div>
+                </div>
+              </article>
+
+              <article className="momentum-card lilac">
+                <div className="momentum-title">Nutikas vihje</div>
+                <div className="momentum-note">
+                  Puhkused kinnitatakse kiiremini, kui lisad kommentaari ja valid kuupäevad varakult.
+                </div>
+              </article>
             </section>
           )}
 

@@ -7,37 +7,14 @@
 }
 
 .form-header h2 {
-  font-size: 20px;
-  margin-bottom: var(--space-md);
+  font-size: 22px;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
 }
 
-.balance-widget {
-  background: #eef4ff;
-  border: 1px solid #dbe6ff;
-  border-radius: 12px;
-  padding: var(--space-md);
-}
-
-.balance-item {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-}
-
-.balance-label {
+.form-subtitle {
   color: var(--color-text-secondary);
-  font-size: 13px;
-}
-
-.balance-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-accent);
-}
-
-.balance-details small {
-  color: var(--color-text-secondary);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .vacation-request-form {
@@ -55,6 +32,25 @@
   padding: 10px 12px;
   margin-bottom: var(--space-md);
   font-size: 14px;
+}
+
+.form-section {
+  padding-top: 8px;
+  margin-top: 18px;
+}
+
+.form-section + .form-section {
+  border-top: 1px dashed var(--color-border);
+  padding-top: 16px;
+}
+
+.form-section-title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 
 .form-group {
@@ -122,16 +118,26 @@
 
 .days-indicator {
   margin: 2px 0 var(--space-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .days-badge {
   display: inline-block;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: #eef4ff;
+  border: 1px solid #dbe6ff;
   border-radius: 999px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
+  color: #0b5fb8;
+  font-size: 13px;
+  font-weight: 600;
   padding: 5px 12px;
+}
+
+.days-remaining-preview {
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
 .leave-type-info {
@@ -264,9 +270,27 @@
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: var(--space-sm);
   margin-top: var(--space-lg);
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.submit-context {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.submit-context strong {
+  color: var(--color-text-primary);
+}
+
+.submit-buttons {
+  display: flex;
+  gap: 8px;
 }
 
 .btn-primary,
@@ -275,7 +299,7 @@
   padding: 0 18px;
   border-radius: 999px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .btn-primary {
@@ -308,6 +332,12 @@
   }
 
   .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .submit-buttons {
+    width: 100%;
     flex-direction: column;
   }
 
