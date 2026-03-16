@@ -8,7 +8,7 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 18px;
-  background: linear-gradient(100deg, #0b63c8 0%, #1f8ae8 58%, #76c8ff 120%);
+  background: #0f7ae6;
   color: #fff;
   border: 1px solid rgba(8, 76, 150, 0.45);
   border-radius: 8px;
@@ -102,7 +102,7 @@
 
 .balance-progress-value {
   height: 100%;
-  background: linear-gradient(90deg, #0a6fe2, #2ca8ff);
+  background: #0a6fe2;
 }
 
 .balance-meta-grid {
@@ -167,7 +167,7 @@
 
 .next-vacation-panel {
   border: 1px solid #ffdca1;
-  background: linear-gradient(180deg, #fff9ec, #fff2da);
+  background: #fff4df;
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -285,7 +285,7 @@
 
 .monthly-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #0a6fe2, #2ca8ff);
+  background: #0a6fe2;
 }
 
 .monthly-meta {

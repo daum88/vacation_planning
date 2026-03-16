@@ -66,7 +66,7 @@
 }
 
 .error-box {
-  background: linear-gradient(135deg, #FFF5F5 0%, #FFF1F0 100%);
+  background: #fff5f5;
   color: var(--color-text-primary);
   border-color: rgba(255, 59, 48, 0.2);
 }
@@ -147,19 +147,19 @@
 }
 
 .status-badge.pending {
-  background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CC 100%);
+  background: #fff4df;
   color: var(--color-warning);
   border: 1px solid rgba(255, 149, 0, 0.2);
 }
 
 .status-badge.approved {
-  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  background: #e9f7ee;
   color: var(--color-success);
   border: 1px solid rgba(52, 199, 89, 0.2);
 }
 
 .status-badge.rejected {
-  background: linear-gradient(135deg, #FFF5F5 0%, #FFCDD2 100%);
+  background: #fff0f0;
   color: var(--color-error);
   border: 1px solid rgba(255, 59, 48, 0.2);
 }
@@ -178,7 +178,7 @@
 }
 
 .admin-comment-box {
-  background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CC 100%);
+  background: #fff4df;
   border-left: 3px solid var(--color-warning);
 }
 

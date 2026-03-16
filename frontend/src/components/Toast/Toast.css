@@ -31,30 +31,22 @@
 
 .toast.toast-success {
   border-left-color: var(--color-success);
-  background: linear-gradient(135deg, 
-    rgba(52, 199, 89, 0.05) 0%, 
-    rgba(255, 255, 255, 0.95) 100%);
+  background: #f5fff8;
 }
 
 .toast.toast-error {
   border-left-color: var(--color-error);
-  background: linear-gradient(135deg, 
-    rgba(255, 59, 48, 0.05) 0%, 
-    rgba(255, 255, 255, 0.95) 100%);
+  background: #fff5f5;
 }
 
 .toast.toast-warning {
   border-left-color: var(--color-warning);
-  background: linear-gradient(135deg, 
-    rgba(255, 149, 0, 0.05) 0%, 
-    rgba(255, 255, 255, 0.95) 100%);
+  background: #fffaf2;
 }
 
 .toast.toast-info {
   border-left-color: var(--color-accent);
-  background: linear-gradient(135deg, 
-    rgba(0, 122, 255, 0.05) 0%, 
-    rgba(255, 255, 255, 0.95) 100%);
+  background: #f5faff;
 }
 
 /* Toast Icon */

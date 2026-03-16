@@ -77,10 +77,7 @@
 
 .app-main {
   min-height: calc(100vh - 68px);
-  background:
-    radial-gradient(860px 330px at 10% -40px, rgba(0, 113, 227, 0.11), transparent 62%),
-    radial-gradient(760px 320px at 90% -30px, rgba(33, 211, 190, 0.09), transparent 62%),
-    var(--color-bg);
+  background: #f6f7fa;
 }
 
 .app-main .container {
@@ -209,9 +206,9 @@
   border: 1px solid var(--color-border);
 }
 
-.toggle-btn.tab-requests::before { background: linear-gradient(180deg, #f4f7ff, #e4ecff); }
-.toggle-btn.tab-statistics::before { background: linear-gradient(180deg, #eefbf4, #dbf5e7); }
-.toggle-btn.tab-calendar::before { background: linear-gradient(180deg, #fff8eb, #ffe8c7); }
+.toggle-btn.tab-requests::before { background: #e7efff; }
+.toggle-btn.tab-statistics::before { background: #e3f6ea; }
+.toggle-btn.tab-calendar::before { background: #ffeccd; }
 
 .toggle-btn:hover { background: #f8f9fc; }
 

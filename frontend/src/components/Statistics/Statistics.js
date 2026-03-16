@@ -99,7 +99,7 @@ const Statistics = () => {
       <header className="statistics-hero">
         <div>
           <h2>Statistika</h2>
-          <p>Ülevaade sinu puhkuse kasutusest, trendidest ja ekspordist.</p>
+          <p>Sinu puhkuse kasutuse ülevaade.</p>
         </div>
         <div className="export-buttons">
           <button onClick={handleExportCSV} className="btn-export">CSV eksport</button>
