@@ -1,9 +1,9 @@
 #!/bin/bash
 
 echo "Käivitan backendit..."
-echo "Backend URL: https://localhost:5001"
-echo "Swagger UI: https://localhost:5001/swagger"
+echo "Backend URL: http://localhost:5000"
+echo "Swagger UI: http://localhost:5000/swagger"
 echo ""
 
 cd backend
-dotnet run
+dotnet run --launch-profile http

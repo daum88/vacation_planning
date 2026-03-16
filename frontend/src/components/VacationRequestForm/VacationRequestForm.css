@@ -1,17 +1,19 @@
 /* ============================================
-   FORM CONTAINER - Clean Card
+   FORM CONTAINER - Clean Card (720px centered)
    ============================================ */
 
 .vacation-request-form {
   background: white;
-  border-radius: var(--radius-lg);
-  padding: var(--card-padding);
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #E5E5E7;
+  max-width: 720px;
+  margin: 0 auto 48px;
 }
 
 .vacation-request-form h2 {
-  font-size: var(--font-size-section-title);
+  font-size: 24px;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-6);
@@ -19,20 +21,19 @@
 }
 
 /* ============================================
-   FORM GROUPS - Consistent Spacing
+   FORM GROUPS - Consistent Spacing (16px)
    ============================================ */
 
 .form-group {
-  margin-bottom: var(--space-4);
+  margin-bottom: 16px;
 }
 
 .form-group label {
   display: block;
-  font-size: var(--font-size-label);
+  font-size: 14px;
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   margin-bottom: 6px;
-  letter-spacing: -0.01em;
 }
 
 .form-group label .required {
@@ -41,19 +42,19 @@
 }
 
 /* ============================================
-   SELECT INPUTS - Clean & Focused
+   SELECT INPUTS - 40px height, clean focus
    ============================================ */
 
 .form-select,
 .form-input,
 .form-textarea {
   width: 100%;
-  height: var(--input-height);
-  padding: 0 var(--space-3);
-  background: var(--color-input-bg);
-  border: 1px solid var(--color-input-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-body);
+  height: 40px;
+  padding: 0 12px;
+  background: white;
+  border: 1px solid #E5E5E7;
+  border-radius: 10px;
+  font-size: 15px;
   font-family: var(--font-family);
   color: var(--color-text-primary);
   transition: all var(--transition-base);
@@ -69,8 +70,8 @@
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus);
+  border-color: #0071E3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
   background: white;
 }
 
@@ -398,23 +399,23 @@
 }
 
 /* ============================================
-   FORM ACTIONS - Primary CTA
+   FORM ACTIONS - Right-aligned Primary CTA
    ============================================ */
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--space-3);
-  margin-top: var(--space-6);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--color-divider);
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #E5E5E7;
 }
 
 .btn {
-  height: var(--button-height);
-  padding: 0 var(--space-6);
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-body);
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 15px;
   font-weight: var(--font-weight-medium);
   font-family: var(--font-family);
   cursor: pointer;
@@ -428,15 +429,15 @@
 }
 
 .btn-primary {
-  background: var(--color-accent);
+  background: #0071E3;
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .btn-primary:hover {
-  background: var(--color-accent-hover);
+  background: #0051D5;
   transform: translateY(-1px);
-  box-shadow: var(--shadow-button);
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
 }
 
 .btn-primary:active {
@@ -452,19 +453,18 @@
 }
 
 .btn-secondary {
-  background: #F2F2F5;
+  background: #F2F2F2;
   color: var(--color-text-primary);
-  border: 1px solid var(--color-divider);
+  border: 1px solid #E5E5E7;
 }
 
 .btn-secondary:hover {
   background: #E9E9EE;
   border-color: #D1D1D6;
-  transform: translateY(-1px);
 }
 
 .btn-secondary:active {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 /* ============================================
