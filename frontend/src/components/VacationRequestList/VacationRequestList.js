@@ -42,7 +42,9 @@ const VacationRequestList = ({ requests, onEdit, onDelete, loading }) => {
                   <span className="date-value">{formatDate(request.endDate)}</span>
                 </div>
               </div>
-              <div className="days-badge">{request.daysCount} päeva</div>
+              <div className="days-badge">
+                {request.daysCount} {request.daysCount === 1 ? 'päev' : 'päeva'}
+              </div>
             </div>
 
             {request.comment && (

@@ -8,15 +8,17 @@ function App() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await vacationRequestsApi.getAll();
       setRequests(response.data);
     } catch (error) {
       console.error('Viga puhkusetaotluste laadimisel:', error);
-      alert('Viga andmete laadimisel. Palun kontrollige, kas backend server töötab.');
+      setError(error.message || 'Viga andmete laadimisel. Palun kontrollige, kas backend server töötab.');
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ function App() {
         fetchRequests();
       } catch (error) {
         console.error('Viga kustutamisel:', error);
-        alert('Viga taotluse kustutamisel.');
+        alert(error.response?.data?.message || 'Viga taotluse kustutamisel.');
       }
     }
   };
@@ -63,6 +65,15 @@ function App() {
 
       <main className="app-main">
         <div className="container">
+          {error && (
+            <div className="global-error">
+              <strong>⚠️ Viga:</strong> {error}
+              <button onClick={fetchRequests} className="retry-button">
+                Proovi uuesti
+              </button>
+            </div>
+          )}
+
           <VacationRequestForm
             onSuccess={handleSuccess}
             editRequest={editingRequest}

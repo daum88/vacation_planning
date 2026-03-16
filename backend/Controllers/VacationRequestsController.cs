@@ -11,23 +11,35 @@ namespace VacationRequestApi.Controllers
     public class VacationRequestsController : ControllerBase
     {
         private readonly VacationRequestContext _context;
+        private readonly ILogger<VacationRequestsController> _logger;
         private const int HardcodedUserId = 1; // Hardcoded user ID as per requirements
+        private const int MaxVacationDays = 90; // Maximum vacation duration in days
 
-        public VacationRequestsController(VacationRequestContext context)
+        public VacationRequestsController(VacationRequestContext context, ILogger<VacationRequestsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // GET: api/VacationRequests
         [HttpGet]
         public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetVacationRequests()
         {
-            var requests = await _context.VacationRequests
-                .Where(vr => vr.UserId == HardcodedUserId)
-                .OrderByDescending(vr => vr.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                var requests = await _context.VacationRequests
+                    .Where(vr => vr.UserId == HardcodedUserId)
+                    .OrderByDescending(vr => vr.CreatedAt)
+                    .ToListAsync();
 
-            return Ok(requests.Select(MapToResponseDto));
+                _logger.LogInformation("Retrieved {Count} vacation requests for user {UserId}", requests.Count, HardcodedUserId);
+                return Ok(requests.Select(MapToResponseDto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving vacation requests for user {UserId}", HardcodedUserId);
+                return StatusCode(500, new { message = "Viga andmete laadimisel." });
+            }
         }
 
         // GET: api/VacationRequests/5
@@ -48,109 +60,210 @@ namespace VacationRequestApi.Controllers
         [HttpPost]
         public async Task<ActionResult<VacationRequestResponseDto>> PostVacationRequest(VacationRequestDto dto)
         {
-            // Validation: Start date must be before end date
-            if (dto.StartDate >= dto.EndDate)
+            try
             {
-                return BadRequest(new { message = "Alguskuupäev peab olema enne lõppkuupäeva." });
+                // Normalize dates to date-only (remove time component)
+                var startDate = dto.StartDate.Date;
+                var endDate = dto.EndDate.Date;
+
+                // Validation 1: Dates must be valid range (not too old or far in future)
+                if (startDate.Year < 2020 || startDate.Year > 2100 || endDate.Year < 2020 || endDate.Year > 2100)
+                {
+                    return BadRequest(new { message = "Vigane kuupäev." });
+                }
+
+                // Validation 2: Start date cannot be in the past
+                if (startDate < DateTime.Today)
+                {
+                    return BadRequest(new { message = "Alguskuupäev ei saa olla minevikus." });
+                }
+
+                // Validation 3: Start date must be before or equal to end date (allow single day vacation)
+                if (startDate > endDate)
+                {
+                    return BadRequest(new { message = "Alguskuupäev peab olema enne või võrdne lõppkuupäevaga." });
+                }
+
+                // Validation 4: Check maximum duration
+                var daysCount = (endDate - startDate).Days + 1; // +1 to include both start and end day
+                if (daysCount > MaxVacationDays)
+                {
+                    return BadRequest(new { message = $"Puhkus ei saa olla pikem kui {MaxVacationDays} päeva." });
+                }
+
+                // Validation 5: Check for overlapping vacation requests
+                var hasOverlap = await _context.VacationRequests
+                    .Where(vr => vr.UserId == HardcodedUserId)
+                    .AnyAsync(vr =>
+                        (startDate >= vr.StartDate.Date && startDate <= vr.EndDate.Date) ||
+                        (endDate >= vr.StartDate.Date && endDate <= vr.EndDate.Date) ||
+                        (startDate <= vr.StartDate.Date && endDate >= vr.EndDate.Date)
+                    );
+
+                if (hasOverlap)
+                {
+                    return BadRequest(new { message = "Sellel perioodil on juba puhkusetaotlus olemas." });
+                }
+
+                // Sanitize comment (basic XSS prevention)
+                var sanitizedComment = dto.Comment?.Trim();
+                if (!string.IsNullOrEmpty(sanitizedComment))
+                {
+                    // Remove potential script tags and dangerous content
+                    sanitizedComment = System.Text.RegularExpressions.Regex.Replace(
+                        sanitizedComment, 
+                        @"<script[^>]*>.*?</script>|<iframe[^>]*>.*?</iframe>|javascript:|on\w+\s*=", 
+                        "", 
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline
+                    );
+                }
+
+                var vacationRequest = new VacationRequest
+                {
+                    UserId = HardcodedUserId,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Comment = sanitizedComment
+                };
+
+                _context.VacationRequests.Add(vacationRequest);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Created vacation request {Id} for user {UserId} from {StartDate} to {EndDate}", 
+                    vacationRequest.Id, HardcodedUserId, startDate, endDate);
+
+                return CreatedAtAction(nameof(GetVacationRequest), new { id = vacationRequest.Id }, MapToResponseDto(vacationRequest));
             }
-
-            // Check for overlapping vacation requests
-            var hasOverlap = await _context.VacationRequests
-                .Where(vr => vr.UserId == HardcodedUserId)
-                .AnyAsync(vr =>
-                    (dto.StartDate >= vr.StartDate && dto.StartDate < vr.EndDate) ||
-                    (dto.EndDate > vr.StartDate && dto.EndDate <= vr.EndDate) ||
-                    (dto.StartDate <= vr.StartDate && dto.EndDate >= vr.EndDate)
-                );
-
-            if (hasOverlap)
+            catch (Exception ex)
             {
-                return BadRequest(new { message = "Sellel perioodil on juba puhkusetaotlus olemas." });
+                _logger.LogError(ex, "Error creating vacation request for user {UserId}", HardcodedUserId);
+                return StatusCode(500, new { message = "Viga taotluse loomisel." });
             }
-
-            var vacationRequest = new VacationRequest
-            {
-                UserId = HardcodedUserId,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                Comment = dto.Comment
-            };
-
-            _context.VacationRequests.Add(vacationRequest);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetVacationRequest), new { id = vacationRequest.Id }, MapToResponseDto(vacationRequest));
         }
 
         // PUT: api/VacationRequests/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutVacationRequest(int id, VacationRequestDto dto)
         {
-            var vacationRequest = await _context.VacationRequests.FindAsync(id);
-
-            if (vacationRequest == null || vacationRequest.UserId != HardcodedUserId)
-            {
-                return NotFound();
-            }
-
-            // Validation: Start date must be before end date
-            if (dto.StartDate >= dto.EndDate)
-            {
-                return BadRequest(new { message = "Alguskuupäev peab olema enne lõppkuupäeva." });
-            }
-
-            // Check for overlapping vacation requests (excluding current request)
-            var hasOverlap = await _context.VacationRequests
-                .Where(vr => vr.UserId == HardcodedUserId && vr.Id != id)
-                .AnyAsync(vr =>
-                    (dto.StartDate >= vr.StartDate && dto.StartDate < vr.EndDate) ||
-                    (dto.EndDate > vr.StartDate && dto.EndDate <= vr.EndDate) ||
-                    (dto.StartDate <= vr.StartDate && dto.EndDate >= vr.EndDate)
-                );
-
-            if (hasOverlap)
-            {
-                return BadRequest(new { message = "Sellel perioodil on juba puhkusetaotlus olemas." });
-            }
-
-            vacationRequest.StartDate = dto.StartDate;
-            vacationRequest.EndDate = dto.EndDate;
-            vacationRequest.Comment = dto.Comment;
-            vacationRequest.UpdatedAt = DateTime.UtcNow;
-
             try
             {
+                var vacationRequest = await _context.VacationRequests.FindAsync(id);
+
+                if (vacationRequest == null || vacationRequest.UserId != HardcodedUserId)
+                {
+                    return NotFound();
+                }
+
+                // Normalize dates to date-only
+                var startDate = dto.StartDate.Date;
+                var endDate = dto.EndDate.Date;
+
+                // Validation 1: Dates must be valid range
+                if (startDate.Year < 2020 || startDate.Year > 2100 || endDate.Year < 2020 || endDate.Year > 2100)
+                {
+                    return BadRequest(new { message = "Vigane kuupäev." });
+                }
+
+                // Validation 2: Start date cannot be in the past (unless updating existing past request)
+                if (startDate < DateTime.Today && vacationRequest.StartDate.Date >= DateTime.Today)
+                {
+                    return BadRequest(new { message = "Alguskuupäev ei saa olla minevikus." });
+                }
+
+                // Validation 3: Start date must be before or equal to end date
+                if (startDate > endDate)
+                {
+                    return BadRequest(new { message = "Alguskuupäev peab olema enne või võrdne lõppkuupäevaga." });
+                }
+
+                // Validation 4: Check maximum duration
+                var daysCount = (endDate - startDate).Days + 1;
+                if (daysCount > MaxVacationDays)
+                {
+                    return BadRequest(new { message = $"Puhkus ei saa olla pikem kui {MaxVacationDays} päeva." });
+                }
+
+                // Validation 5: Check for overlapping vacation requests (excluding current request)
+                var hasOverlap = await _context.VacationRequests
+                    .Where(vr => vr.UserId == HardcodedUserId && vr.Id != id)
+                    .AnyAsync(vr =>
+                        (startDate >= vr.StartDate.Date && startDate <= vr.EndDate.Date) ||
+                        (endDate >= vr.StartDate.Date && endDate <= vr.EndDate.Date) ||
+                        (startDate <= vr.StartDate.Date && endDate >= vr.EndDate.Date)
+                    );
+
+                if (hasOverlap)
+                {
+                    return BadRequest(new { message = "Sellel perioodil on juba puhkusetaotlus olemas." });
+                }
+
+                // Sanitize comment
+                var sanitizedComment = dto.Comment?.Trim();
+                if (!string.IsNullOrEmpty(sanitizedComment))
+                {
+                    sanitizedComment = System.Text.RegularExpressions.Regex.Replace(
+                        sanitizedComment, 
+                        @"<script[^>]*>.*?</script>|<iframe[^>]*>.*?</iframe>|javascript:|on\w+\s*=", 
+                        "", 
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline
+                    );
+                }
+
+                vacationRequest.StartDate = startDate;
+                vacationRequest.EndDate = endDate;
+                vacationRequest.Comment = sanitizedComment;
+                vacationRequest.UpdatedAt = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Updated vacation request {Id} for user {UserId}", id, HardcodedUserId);
+
+                return NoContent();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
                 if (!VacationRequestExists(id))
                 {
+                    _logger.LogWarning("Attempted to update non-existent vacation request {Id}", id);
                     return NotFound();
                 }
                 else
                 {
-                    throw;
+                    _logger.LogError(ex, "Concurrency error updating vacation request {Id}", id);
+                    return StatusCode(409, new { message = "Taotlus on vahepeal muudetud. Palun laadige leht uuesti." });
                 }
             }
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating vacation request {Id}", id);
+                return StatusCode(500, new { message = "Viga taotluse uuendamisel." });
+            }
         }
 
         // DELETE: api/VacationRequests/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVacationRequest(int id)
         {
-            var vacationRequest = await _context.VacationRequests.FindAsync(id);
-            if (vacationRequest == null || vacationRequest.UserId != HardcodedUserId)
+            try
             {
-                return NotFound();
+                var vacationRequest = await _context.VacationRequests.FindAsync(id);
+                if (vacationRequest == null || vacationRequest.UserId != HardcodedUserId)
+                {
+                    return NotFound();
+                }
+
+                _context.VacationRequests.Remove(vacationRequest);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Deleted vacation request {Id} for user {UserId}", id, HardcodedUserId);
+
+                return NoContent();
             }
-
-            _context.VacationRequests.Remove(vacationRequest);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting vacation request {Id}", id);
+                return StatusCode(500, new { message = "Viga taotluse kustutamisel." });
+            }
         }
 
         private bool VacationRequestExists(int id)
@@ -167,7 +280,7 @@ namespace VacationRequestApi.Controllers
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 Comment = request.Comment,
-                DaysCount = (request.EndDate.Date - request.StartDate.Date).Days,
+                DaysCount = (request.EndDate.Date - request.StartDate.Date).Days + 1, // +1 to include both days
                 CreatedAt = request.CreatedAt,
                 UpdatedAt = request.UpdatedAt
             };

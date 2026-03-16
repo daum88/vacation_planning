@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { vacationRequestsApi } from '../../api/api';
-import { formatDateForInput, calculateDays } from '../../utils/dateUtils';
+import { formatDateForInput, calculateDays, getTodayString, isDateInPast } from '../../utils/dateUtils';
 import './VacationRequestForm.css';
 
 const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
@@ -12,6 +12,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [daysCount, setDaysCount] = useState(0);
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     if (editRequest) {
@@ -26,7 +27,29 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   useEffect(() => {
     const days = calculateDays(formData.startDate, formData.endDate);
     setDaysCount(days);
-  }, [formData.startDate, formData.endDate]);
+
+    // Real-time validation
+    const errors = {};
+
+    if (formData.startDate && isDateInPast(formData.startDate) && !editRequest) {
+      errors.startDate = 'Alguskuupäev ei saa olla minevikus';
+    }
+
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      
+      if (start > end) {
+        errors.endDate = 'Lõppkuupäev peab olema pärast või võrdne alguskuupäevaga';
+      }
+
+      if (days > 90) {
+        errors.endDate = 'Puhkus ei saa olla pikem kui 90 päeva';
+      }
+    }
+
+    setValidationErrors(errors);
+  }, [formData.startDate, formData.endDate, editRequest]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,10 +65,18 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     setError('');
     setLoading(true);
 
+    // Check for validation errors
+    if (Object.keys(validationErrors).length > 0) {
+      setError('Palun parandage vormi vead enne salvestamist.');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Send dates with time set to start of day for start date and end of day for end date
       const requestData = {
-        startDate: new Date(formData.startDate).toISOString(),
-        endDate: new Date(formData.endDate).toISOString(),
+        startDate: new Date(formData.startDate + 'T00:00:00').toISOString(),
+        endDate: new Date(formData.endDate + 'T23:59:59').toISOString(),
         comment: formData.comment,
       };
 
@@ -62,6 +93,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
       });
       onSuccess();
     } catch (err) {
+      console.error('Form submission error:', err);
       setError(
         err.response?.data?.message ||
           'Viga taotluse salvestamisel. Palun kontrollige sisestatud andmeid.'
@@ -70,6 +102,9 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
       setLoading(false);
     }
   };
+
+  const hasValidationErrors = Object.keys(validationErrors).length > 0;
+  const today = getTodayString();
 
   return (
     <div className="form-container">
@@ -83,8 +118,13 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             name="startDate"
             value={formData.startDate}
             onChange={handleChange}
+            min={editRequest ? undefined : today}
             required
+            className={validationErrors.startDate ? 'error' : ''}
           />
+          {validationErrors.startDate && (
+            <span className="field-error">{validationErrors.startDate}</span>
+          )}
         </div>
 
         <div className="form-group">
@@ -95,13 +135,18 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             name="endDate"
             value={formData.endDate}
             onChange={handleChange}
+            min={formData.startDate || (editRequest ? undefined : today)}
             required
+            className={validationErrors.endDate ? 'error' : ''}
           />
+          {validationErrors.endDate && (
+            <span className="field-error">{validationErrors.endDate}</span>
+          )}
         </div>
 
         {daysCount > 0 && (
-          <div className="days-count">
-            <strong>Päevade arv:</strong> {daysCount} päeva
+          <div className={`days-count ${daysCount > 90 ? 'error' : ''}`}>
+            <strong>Päevade arv:</strong> {daysCount} {daysCount === 1 ? 'päev' : 'päeva'}
           </div>
         )}
 
@@ -122,7 +167,11 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
         {error && <div className="error-message">{error}</div>}
 
         <div className="form-actions">
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          <button 
+            type="submit" 
+            disabled={loading || hasValidationErrors || !formData.startDate || !formData.endDate} 
+            className="btn btn-primary"
+          >
             {loading ? 'Salvestamine...' : editRequest ? 'Uuenda' : 'Loo taotlus'}
           </button>
           {editRequest && (

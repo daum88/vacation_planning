@@ -20,5 +20,18 @@ export const calculateDays = (startDate, endDate) => {
   const diffTime = end - start;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
-  return diffDays > 0 ? diffDays : 0;
+  // Include both start and end day
+  return diffDays >= 0 ? diffDays + 1 : 0;
+};
+
+export const getTodayString = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+export const isDateInPast = (dateString) => {
+  const date = new Date(dateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date < today;
 };

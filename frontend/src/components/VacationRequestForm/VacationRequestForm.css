@@ -46,6 +46,11 @@
   border-color: #667eea;
 }
 
+.form-group input.error,
+.form-group textarea.error {
+  border-color: #f44336;
+}
+
 .form-group textarea {
   resize: vertical;
   min-height: 100px;
@@ -56,6 +61,13 @@
   font-size: 0.85rem;
 }
 
+.field-error {
+  color: #f44336;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
 .days-count {
   background: #f0f7ff;
   padding: 1rem;
@@ -64,6 +76,12 @@
   font-size: 1.1rem;
   text-align: center;
   border: 2px solid #b3d9ff;
+}
+
+.days-count.error {
+  background: #fff0f0;
+  color: #c33;
+  border-color: #fcc;
 }
 
 .error-message {
