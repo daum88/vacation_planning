@@ -1,100 +1,30 @@
-/* Apple-inspired Design System - Refined */
+/* Reset everything to minimal Apple style */
 
 :root {
-  /* Color System - Lighter & Cleaner */
-  --color-bg-primary: #F5F5F7;
-  --color-bg-secondary: #FFFFFF;
-  --color-surface: #FFFFFF;
-  --color-divider: #E5E5EA;
-  --color-input-border: #E5E5EA;
-  --color-input-bg: #FFFFFF;
+  /* Simple color system */
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
   
-  /* Text Colors */
-  --color-text-primary: #1D1D1F;
-  --color-text-secondary: #6E6E73;
-  --color-text-tertiary: #8E8E93;
-  --color-text-disabled: #C7C7CC;
+  --blue-500: #3B82F6;
+  --blue-600: #2563EB;
   
-  /* Accent Color */
-  --color-accent: #007AFF;
-  --color-accent-hover: #0051D5;
-  --color-accent-light: rgba(0, 122, 255, 0.15);
-  
-  /* Semantic Colors */
-  --color-success: #34C759;
-  --color-warning: #FF9500;
-  --color-error: #FF3B30;
-  
-  /* Typography Scale - Inter Font */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-  --font-size-page-title: 28px;
-  --font-size-section-title: 20px;
-  --font-size-card-title: 18px;
-  --font-size-body: 15px;
-  --font-size-small: 13px;
-  --font-size-label: 13px;
-  --font-size-caption: 12px;
-  
-  /* Font Weights */
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  
-  /* Spacing Scale - Consistent 8pt Grid */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-12: 48px;
-  --space-16: 64px;
-  
-  /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-pill: 999px;
-  
-  /* Shadows - Softer */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.10);
-  --shadow-button: 0 6px 16px rgba(0, 122, 255, 0.25);
-  --shadow-focus: 0 0 0 3px rgba(0, 122, 255, 0.15);
-  
-  /* Transitions */
-  --transition-fast: 120ms ease-out;
-  --transition-base: 150ms ease-out;
-  --transition-slow: 250ms ease-out;
-  
-  /* Layout */
-  --container-max-width: 1100px;
-  --navbar-height: 60px;
-  --card-padding: 28px;
-  --input-height: 40px;
-  --button-height: 44px;
+  /* Simple spacing */
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
 }
 
-/* Dark Mode Variables (optional) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-primary: #1C1C1E;
-    --color-bg-secondary: #2C2C2E;
-    --color-surface: #2C2C2E;
-    --color-divider: #38383A;
-    --color-text-primary: #F5F5F7;
-    --color-text-secondary: #98989D;
-    --color-text-disabled: #636366;
-  }
-}
-
-/* Import Inter Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Reset and Base Styles */
 * {
   margin: 0;
   padding: 0;
@@ -102,64 +32,25 @@
 }
 
 body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-body);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
   line-height: 1.5;
-  color: var(--color-text-primary);
-  background: var(--color-bg-primary);
+  color: var(--gray-900);
+  background: #FFFFFF;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  font-feature-settings: 'kern' 1;
 }
 
-/* Typography */
-h1 {
-  font-size: var(--font-size-page-title);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+/* Simple typography */
+h1 { font-size: 24px; font-weight: 600; margin-bottom: 16px; }
+h2 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
 }
 
-h2 {
-  font-size: var(--font-size-section-title);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-}
-
-h3 {
-  font-size: var(--font-size-card-title);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.4;
-}
-
-p {
-  line-height: 1.6;
-  color: var(--color-text-secondary);
-}
-
-small {
-  font-size: var(--font-size-small);
-  color: var(--color-text-secondary);
-}
-
-/* Focus Styles for Accessibility */
-*:focus-visible {
-  outline: 3px solid var(--color-accent-light);
-  outline-offset: 2px;
-}
-
-/* Selection */
-::selection {
-  background: var(--color-accent-light);
-  color: var(--color-text-primary);
-}
-
-code {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Courier New', monospace;
-  font-size: 0.9em;
-  background: rgba(0, 0, 0, 0.04);
-  padding: 2px 6px;
-  border-radius: 4px;
+input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
 }
