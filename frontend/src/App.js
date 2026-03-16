@@ -245,7 +245,7 @@ function AppContent() {
               <div className="top-summary-note">
                 {overview.upcoming
                   ? `Järgmine planeeritud puhkus: ${new Date(overview.upcoming.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – ${new Date(overview.upcoming.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}`
-                  : 'Sul pole hetkel planeeritud puhkust.'}
+                  : 'Sul ei ole veel planeeritud puhkust. Vali kuupäevad ja saada esimene taotlus.'}
               </div>
             </section>
           )}

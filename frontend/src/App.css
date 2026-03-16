@@ -90,19 +90,21 @@
 }
 
 .top-summary {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 16px;
+  display: grid;
+  grid-template-columns: 1.1fr 1.9fr;
+  gap: 12px;
   margin-bottom: 18px;
 }
 
 .top-summary-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
+  background: #ffffff;
 }
 
 .top-summary-head h2 {
@@ -117,13 +119,13 @@
 }
 
 .quick-cta {
-  height: 36px;
-  padding: 0 14px;
+  height: 34px;
+  padding: 0 12px;
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: 4px;
   background: #f7f9fc;
   color: var(--color-text-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -134,18 +136,20 @@
 .balance-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 10px;
+  border: 1px solid var(--color-border);
+  background: #ffffff;
 }
 
 .balance-strip-item {
-  border: 1px solid var(--color-border);
-  background: #fbfcfe;
-  border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  border-right: 1px solid var(--color-border);
+}
+
+.balance-strip-item:last-child {
+  border-right: none;
 }
 
 .balance-strip-item span {
@@ -157,16 +161,16 @@
 }
 
 .balance-strip-item strong {
-  font-size: 24px;
+  font-size: 26px;
   line-height: 1;
 }
 
 .top-summary-note {
-  border-left: 3px solid #f59e0b;
+  grid-column: 1 / -1;
+  border: 1px solid #ffe3b2;
   background: #fff8ea;
   color: #7a5300;
-  border-radius: 6px;
-  padding: 9px 10px;
+  padding: 10px 12px;
   font-size: 13px;
 }
 
@@ -279,6 +283,10 @@
     padding: 16px;
   }
 
+  .top-summary {
+    grid-template-columns: 1fr;
+  }
+
   .top-summary-head {
     flex-direction: column;
     align-items: flex-start;
@@ -286,6 +294,19 @@
 
   .balance-strip {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .balance-strip-item {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .balance-strip-item:nth-child(odd) {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .balance-strip-item:nth-last-child(-n+2) {
+    border-bottom: none;
   }
 
   .view-toggle {
