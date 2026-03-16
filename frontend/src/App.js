@@ -4,6 +4,7 @@ import VacationRequestList from './components/VacationRequestList/VacationReques
 import Statistics from './components/Statistics/Statistics';
 import AdminDashboard from './components/AdminDashboard/AdminDashboard';
 import TeamCalendar from './components/TeamCalendar/TeamCalendar';
+import YearTimeline from './components/YearTimeline/YearTimeline';
 import { ToastProvider, useToast } from './components/Toast/Toast';
 import { vacationRequestsApi, usersApi, setUserRole, setUserId, getCurrentRole, getCurrentUserId } from './api/api';
 import './App.css';
@@ -14,7 +15,7 @@ function AppContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingRequest, setEditingRequest] = useState(null);
-  const [currentView, setCurrentView] = useState('requests'); // 'requests', 'statistics', 'calendar', 'admin'
+  const [currentView, setCurrentView] = useState('requests'); // 'requests', 'statistics', 'calendar', 'timeline', 'admin'
   const [userRole, setUserRoleState] = useState(getCurrentRole());
   const [selectedUserId, setSelectedUserId] = useState(parseInt(getCurrentUserId()));
   const toast = useToast();
@@ -144,6 +145,8 @@ function AppContent() {
         return <Statistics key={requests.length} />;
       case 'calendar':
         return <TeamCalendar />;
+      case 'timeline':
+        return <YearTimeline />;
       default:
         return (
           <div className="dashboard-flow">
@@ -268,6 +271,12 @@ function AppContent() {
                   onClick={() => setCurrentView('calendar')}
                 >
                   Kalender
+                </button>
+                <button
+                  className={`toggle-btn tab-timeline ${currentView === 'timeline' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('timeline')}
+                >
+                  Aasta
                 </button>
               </div>
 

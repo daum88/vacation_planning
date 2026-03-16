@@ -98,12 +98,12 @@ export const vacationRequestsApi = {
     api.delete(`/VacationRequests/${requestId}/attachments/${attachmentId}`)
 };
 
-// Users API
 export const usersApi = {
   getAll: (includeInactive = false) => api.get('/Users', { params: { includeInactive } }),
   getById: (id) => api.get(`/Users/${id}`),
   getCurrent: () => api.get('/Users/current'),
-  getBalance: (id) => api.get(`/Users/${id}/balance`)
+  getBalance: (id) => api.get(`/Users/${id}/balance`),
+  updateCarryOver: (id, carryOverDays) => api.put(`/Users/${id}/carryover`, { carryOverDays }),
 };
 
 // Leave Types API
@@ -114,11 +114,25 @@ export const leaveTypesApi = {
 
 // Calendar API
 export const calendarApi = {
-  getTeamCalendar: (startDate, endDate, department) => 
+  getTeamCalendar: (startDate, endDate, department) =>
     api.get('/Calendar/team', { params: { startDate, endDate, department } }),
-  checkConflicts: (startDate, endDate, excludeRequestId, department) => 
+  checkConflicts: (startDate, endDate, excludeRequestId, department) =>
     api.get('/Calendar/conflicts', { params: { startDate, endDate, excludeRequestId, department } }),
-  getDepartments: () => api.get('/Calendar/departments')
+  getDepartments: () => api.get('/Calendar/departments'),
+  getPublicHolidays: (year) => api.get('/Calendar/holidays', { params: { year } }),
+  getBlackouts: () => api.get('/Calendar/blackouts'),
+};
+
+// Blackout Periods API
+export const blackoutPeriodsApi = {
+  getAll: (activeOnly = true) => api.get('/BlackoutPeriods', { params: { activeOnly } }),
+  create: (data) => api.post('/BlackoutPeriods', data),
+  delete: (id) => api.delete(`/BlackoutPeriods/${id}`),
+};
+
+// Notifications API
+export const notificationsApi = {
+  getAll: (limit = 50) => api.get('/Notifications', { params: { limit } }),
 };
 
 // Helper functions

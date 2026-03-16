@@ -42,6 +42,7 @@ namespace VacationRequestApi.DTOs
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string? Comment { get; set; }
+        public string? SubstituteName { get; set; }
     }
 
     public class VacationRequestUpdateDto
@@ -50,6 +51,7 @@ namespace VacationRequestApi.DTOs
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string? Comment { get; set; }
+        public string? SubstituteName { get; set; }
     }
 
     public class VacationRequestResponseDto
@@ -65,12 +67,14 @@ namespace VacationRequestApi.DTOs
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string? Comment { get; set; }
+        public string? SubstituteName { get; set; }
         public string Status { get; set; } = string.Empty;
         public int? ApprovedByUserId { get; set; }
         public string? ApprovedByName { get; set; }
         public DateTime? ApprovedAt { get; set; }
         public string? AdminComment { get; set; }
-        public int DaysCount { get; set; }
+        public int DaysCount { get; set; }        // working days
+        public int CalendarDaysCount { get; set; } // total calendar days
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public List<AttachmentDto> Attachments { get; set; } = new List<AttachmentDto>();
@@ -188,5 +192,50 @@ namespace VacationRequestApi.DTOs
         public string Color { get; set; } = string.Empty;
         public int DaysUsed { get; set; }
         public int RequestsCount { get; set; }
+    }
+
+    // Blackout Period DTOs
+    public class BlackoutPeriodDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class BlackoutPeriodCreateDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+
+    // Public Holiday DTOs
+    public class PublicHolidayDto
+    {
+        public DateTime Date { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    // Notification Log DTOs
+    public class NotificationLogDto
+    {
+        public int Id { get; set; }
+        public int? RequestId { get; set; }
+        public string ToEmail { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public bool IsMock { get; set; }
+        public DateTime SentAt { get; set; }
+    }
+
+    // Carry-over update DTO
+    public class CarryOverUpdateDto
+    {
+        public int CarryOverDays { get; set; }
     }
 }

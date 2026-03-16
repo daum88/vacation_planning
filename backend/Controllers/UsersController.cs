@@ -149,5 +149,27 @@ namespace VacationRequestApi.Controllers
                 HireDate = user.HireDate
             };
         }
+
+        // PUT: api/Users/5/carryover
+        [HttpPut("{id}/carryover")]
+        public async Task<IActionResult> UpdateCarryOver(int id, [FromBody] CarryOverUpdateDto dto)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(id);
+                if (user == null) return NotFound();
+
+                user.CarryOverDays = Math.Max(0, dto.CarryOverDays);
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(MapToDto(user));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating carry-over for user {Id}", id);
+                return StatusCode(500, new { message = "Viga ülekandemise uuendamisel." });
+            }
+        }
     }
 }

@@ -209,6 +209,7 @@
 .toggle-btn.tab-requests::before { background: #e7efff; }
 .toggle-btn.tab-statistics::before { background: #e3f6ea; }
 .toggle-btn.tab-calendar::before { background: #ffeccd; }
+.toggle-btn.tab-timeline::before { background: #ece8ff; }
 
 .toggle-btn:hover { background: #f8f9fc; }
 

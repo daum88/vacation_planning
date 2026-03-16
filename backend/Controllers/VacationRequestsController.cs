@@ -20,6 +20,7 @@ namespace VacationRequestApi.Controllers
         private readonly IAuditService _auditService;
         private readonly IFileStorageService _fileStorageService;
         private readonly IUserService _userService;
+        private readonly IPublicHolidayService _publicHolidayService;
 
         public VacationRequestsController(
             VacationRequestContext context,
@@ -27,7 +28,8 @@ namespace VacationRequestApi.Controllers
             IEmailService emailService,
             IAuditService auditService,
             IFileStorageService fileStorageService,
-            IUserService userService)
+            IUserService userService,
+            IPublicHolidayService publicHolidayService)
         {
             _context = context;
             _logger = logger;
@@ -35,6 +37,7 @@ namespace VacationRequestApi.Controllers
             _auditService = auditService;
             _fileStorageService = fileStorageService;
             _userService = userService;
+            _publicHolidayService = publicHolidayService;
         }
 
         // GET: api/VacationRequests - with filtering
@@ -227,8 +230,8 @@ namespace VacationRequestApi.Controllers
                     return BadRequest(new { message = "Vale puhkuse tüüp." });
                 }
 
-                // Check balance
-                var daysRequested = (dto.EndDate.Date - dto.StartDate.Date).Days + 1;
+                // Check balance using working days
+                var daysRequested = _publicHolidayService.CountWorkingDays(dto.StartDate.Date, dto.EndDate.Date);
                 if (user.RemainingLeaveDays < daysRequested && leaveType.IsPaid)
                 {
                     return BadRequest(new
@@ -244,6 +247,7 @@ namespace VacationRequestApi.Controllers
                     StartDate = dto.StartDate.Date,
                     EndDate = dto.EndDate.Date,
                     Comment = sanitizedComment,
+                    SubstituteName = dto.SubstituteName?.Trim(),
                     Status = leaveType.RequiresApproval ? VacationRequestStatus.Pending : VacationRequestStatus.Approved,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -351,6 +355,7 @@ namespace VacationRequestApi.Controllers
                 vacationRequest.StartDate = dto.StartDate.Date;
                 vacationRequest.EndDate = dto.EndDate.Date;
                 vacationRequest.Comment = SanitizeInput(dto.Comment);
+                vacationRequest.SubstituteName = dto.SubstituteName?.Trim();
                 vacationRequest.UpdatedAt = DateTime.UtcNow;
 
                 try
@@ -602,10 +607,11 @@ namespace VacationRequestApi.Controllers
                 vacationRequest.AdminComment = dto.AdminComment?.Trim();
                 vacationRequest.UpdatedAt = DateTime.UtcNow;
 
-                // Update user's used days if approved
+                // Update user's used days if approved (working days only)
                 if (dto.Approved && vacationRequest.User != null && vacationRequest.LeaveType?.IsPaid == true)
                 {
-                    var daysCount = (vacationRequest.EndDate.Date - vacationRequest.StartDate.Date).Days + 1;
+                    var daysCount = _publicHolidayService.CountWorkingDays(
+                        vacationRequest.StartDate.Date, vacationRequest.EndDate.Date);
                     vacationRequest.User.UsedLeaveDays += daysCount;
                 }
 
@@ -1075,12 +1081,14 @@ namespace VacationRequestApi.Controllers
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 Comment = request.Comment,
+                SubstituteName = request.SubstituteName,
                 Status = request.Status.ToString(),
                 ApprovedByUserId = request.ApprovedByUserId,
                 ApprovedByName = request.ApprovedBy?.FullName,
                 ApprovedAt = request.ApprovedAt,
                 AdminComment = request.AdminComment,
-                DaysCount = (request.EndDate.Date - request.StartDate.Date).Days + 1,
+                DaysCount = _publicHolidayService.CountWorkingDays(request.StartDate.Date, request.EndDate.Date),
+                CalendarDaysCount = (request.EndDate.Date - request.StartDate.Date).Days + 1,
                 CreatedAt = request.CreatedAt,
                 UpdatedAt = request.UpdatedAt,
                 Attachments = request.Attachments.Select(a => new AttachmentDto

@@ -15,6 +15,8 @@ namespace VacationRequestApi.Data
         public DbSet<LeaveType> LeaveTypes { get; set; }
         public DbSet<VacationRequestAttachment> VacationRequestAttachments { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; }
+        public DbSet<NotificationLog> NotificationLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -117,9 +119,32 @@ namespace VacationRequestApi.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Index for performance
                 entity.HasIndex(e => e.VacationRequestId);
                 entity.HasIndex(e => e.Timestamp);
+            });
+
+            // BlackoutPeriod configuration
+            modelBuilder.Entity<BlackoutPeriod>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.StartDate).IsRequired();
+                entity.Property(e => e.EndDate).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+
+                entity.HasOne(e => e.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // NotificationLog configuration
+            modelBuilder.Entity<NotificationLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ToEmail).IsRequired();
+                entity.Property(e => e.SentAt).HasDefaultValueSql("datetime('now')");
+                entity.HasIndex(e => e.SentAt);
             });
 
             // Seed data
@@ -300,6 +325,31 @@ namespace VacationRequestApi.Data
                     HireDate = new DateTime(2019, 11, 15),
                     CreatedAt = now,
                     UpdatedAt = now
+                }
+            );
+            // Seed BlackoutPeriods (example company-wide blocked periods)
+            modelBuilder.Entity<BlackoutPeriod>().HasData(
+                new BlackoutPeriod
+                {
+                    Id = 1,
+                    Name = "Aastalõpu sulgemisperiood",
+                    Description = "Ettevõte on suletud aasta lõpus",
+                    StartDate = new DateTime(2026, 12, 27),
+                    EndDate = new DateTime(2026, 12, 31),
+                    IsActive = true,
+                    CreatedByUserId = 3,
+                    CreatedAt = now
+                },
+                new BlackoutPeriod
+                {
+                    Id = 2,
+                    Name = "Kvartaliaruande periood",
+                    Description = "Kõigi töötajate kohalolu nõutud",
+                    StartDate = new DateTime(2026, 3, 30),
+                    EndDate = new DateTime(2026, 4, 1),
+                    IsActive = true,
+                    CreatedByUserId = 3,
+                    CreatedAt = now
                 }
             );
         }

@@ -47,6 +47,9 @@ namespace VacationRequestApi.Models
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        [MaxLength(200)]
+        public string? SubstituteName { get; set; }
+
         [Timestamp]
         public byte[]? RowVersion { get; set; }
 

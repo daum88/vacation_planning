@@ -1,3 +1,6 @@
+using VacationRequestApi.Data;
+using VacationRequestApi.Models;
+
 namespace VacationRequestApi.Services
 {
     public interface IEmailService
@@ -13,180 +16,77 @@ namespace VacationRequestApi.Services
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
-        private readonly string _fromEmail;
-        private readonly string _fromName;
+        private readonly VacationRequestContext _context;
 
-        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
+        public EmailService(IConfiguration configuration, ILogger<EmailService> logger, VacationRequestContext context)
         {
             _configuration = configuration;
             _logger = logger;
-            _fromEmail = _configuration["Email:FromEmail"] ?? "noreply@example.com";
-            _fromName = _configuration["Email:FromName"] ?? "Puhkusetaotluste süsteem";
+            _context = context;
         }
 
         public async Task SendRequestSubmittedEmailAsync(int requestId, string employeeName, string employeeEmail)
         {
             var subject = "Puhkusetaotlus esitatud";
-            var body = $@"
-<html>
-<body style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px;'>
-    <h2 style='color: #007AFF;'>✅ Taotlus esitatud</h2>
-    <p>Tere, {employeeName}!</p>
-    <p>Sinu puhkusetaotlus #{requestId} on edukalt esitatud ja ootab kinnitust.</p>
-    <p>Saad teavituse, kui taotlus on läbi vaadatud.</p>
-    <hr style='border: none; border-top: 1px solid #E5E5EA; margin: 20px 0;'>
-    <p style='color: #8E8E93; font-size: 12px;'>See on automaatne teade. Palun ära vasta sellele kirjale.</p>
-</body>
-</html>";
-
-            await SendEmailAsync(employeeEmail, subject, body);
+            var body = $"Tere, {employeeName}! Sinu puhkusetaotlus #{requestId} on edukalt esitatud ja ootab kinnitust.";
+            await SendEmailAsync(employeeEmail, subject, body, "Submitted", requestId);
         }
 
         public async Task SendRequestApprovedEmailAsync(int requestId, string employeeName, string employeeEmail, string? adminComment)
         {
-            var subject = "✅ Puhkusetaotlus kinnitatud";
-            var commentSection = !string.IsNullOrWhiteSpace(adminComment)
-                ? $"<p><strong>Kommentaar:</strong> {adminComment}</p>"
-                : "";
-
-            var body = $@"
-<html>
-<body style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px;'>
-    <h2 style='color: #34C759;'>✅ Taotlus kinnitatud</h2>
-    <p>Tere, {employeeName}!</p>
-    <p>Sinu puhkusetaotlus #{requestId} on kinnitatud! 🎉</p>
-    {commentSection}
-    <p>Head puhkust!</p>
-    <hr style='border: none; border-top: 1px solid #E5E5EA; margin: 20px 0;'>
-    <p style='color: #8E8E93; font-size: 12px;'>See on automaatne teade. Palun ära vasta sellele kirjale.</p>
-</body>
-</html>";
-
-            await SendEmailAsync(employeeEmail, subject, body);
+            var subject = "Puhkusetaotlus kinnitatud";
+            var body = $"Tere, {employeeName}! Sinu puhkusetaotlus #{requestId} on kinnitatud.{(adminComment != null ? $" Kommentaar: {adminComment}" : "")}";
+            await SendEmailAsync(employeeEmail, subject, body, "Approved", requestId);
         }
 
         public async Task SendRequestRejectedEmailAsync(int requestId, string employeeName, string employeeEmail, string? adminComment)
         {
-            var subject = "❌ Puhkusetaotlus tagasi lükatud";
-            var reasonSection = !string.IsNullOrWhiteSpace(adminComment)
-                ? $"<p><strong>Põhjus:</strong> {adminComment}</p>"
-                : "<p>Põhjust ei täpsustatud.</p>";
-
-            var body = $@"
-<html>
-<body style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px;'>
-    <h2 style='color: #FF3B30;'>❌ Taotlus tagasi lükatud</h2>
-    <p>Tere, {employeeName}!</p>
-    <p>Kahjuks on sinu puhkusetaotlus #{requestId} tagasi lükatud.</p>
-    {reasonSection}
-    <p>Palun võta ühendust oma juhiga täpsustuste saamiseks.</p>
-    <hr style='border: none; border-top: 1px solid #E5E5EA; margin: 20px 0;'>
-    <p style='color: #8E8E93; font-size: 12px;'>See on automaatne teade. Palun ära vasta sellele kirjale.</p>
-</body>
-</html>";
-
-            await SendEmailAsync(employeeEmail, subject, body);
+            var subject = "Puhkusetaotlus tagasi lükatud";
+            var body = $"Tere, {employeeName}! Sinu puhkusetaotlus #{requestId} lükati tagasi.{(adminComment != null ? $" Põhjus: {adminComment}" : "")}";
+            await SendEmailAsync(employeeEmail, subject, body, "Rejected", requestId);
         }
 
         public async Task SendNewRequestNotificationToAdminsAsync(int requestId, string employeeName, DateTime startDate, DateTime endDate)
         {
-            var subject = "🔔 Uus puhkusetaotlus ootab kinnitust";
-            var body = $@"
-<html>
-<body style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px;'>
-    <h2 style='color: #007AFF;'>🔔 Uus taotlus</h2>
-    <p><strong>{employeeName}</strong> on esitanud uue puhkusetaotluse:</p>
-    <ul>
-        <li><strong>Taotlus #:</strong> {requestId}</li>
-        <li><strong>Algus:</strong> {startDate:dd.MM.yyyy}</li>
-        <li><strong>Lõpp:</strong> {endDate:dd.MM.yyyy}</li>
-        <li><strong>Päevi:</strong> {(endDate - startDate).Days + 1}</li>
-    </ul>
-    <p>Palun vaata taotlus üle ja kinnita või lükka tagasi.</p>
-    <hr style='border: none; border-top: 1px solid #E5E5EA; margin: 20px 0;'>
-    <p style='color: #8E8E93; font-size: 12px;'>See on automaatne teade. Palun ära vasta sellele kirjale.</p>
-</body>
-</html>";
-
-            // In real implementation, fetch admin emails from database
+            var subject = "Uus puhkusetaotlus ootab kinnitust";
+            var body = $"{employeeName} esitas taotluse #{requestId}: {startDate:dd.MM.yyyy} – {endDate:dd.MM.yyyy}.";
             var adminEmails = _configuration.GetSection("Email:AdminEmails").Get<List<string>>() ?? new List<string>();
-            
+            if (!adminEmails.Any()) adminEmails.Add("admin@example.com");
             foreach (var adminEmail in adminEmails)
-            {
-                await SendEmailAsync(adminEmail, subject, body);
-            }
+                await SendEmailAsync(adminEmail, subject, body, "AdminNotification", requestId);
         }
 
         public async Task SendUpcomingVacationReminderAsync(string employeeName, string employeeEmail, DateTime startDate, int daysUntil)
         {
-            var subject = $"🏖️ Meeldetuletus: Puhkus algab {daysUntil} päeva pärast";
-            var body = $@"
-<html>
-<body style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px;'>
-    <h2 style='color: #007AFF;'>🏖️ Puhkuse meeldetuletus</h2>
-    <p>Tere, {employeeName}!</p>
-    <p>Sinu puhkus algab <strong>{startDate:dd.MM.yyyy}</strong> ({daysUntil} päeva pärast).</p>
-    <p>Ära unusta:</p>
-    <ul>
-        <li>Seadistada automaatne vastus</li>
-        <li>Teavitada kliente/kolleege</li>
-        <li>Üle anda käimasolevad ülesanded</li>
-    </ul>
-    <p>Head puhkust! 🌴</p>
-    <hr style='border: none; border-top: 1px solid #E5E5EA; margin: 20px 0;'>
-    <p style='color: #8E8E93; font-size: 12px;'>See on automaatne teade. Palun ära vasta sellele kirjale.</p>
-</body>
-</html>";
-
-            await SendEmailAsync(employeeEmail, subject, body);
+            var subject = $"Meeldetuletus: Puhkus algab {daysUntil} päeva pärast";
+            var body = $"Tere, {employeeName}! Sinu puhkus algab {startDate:dd.MM.yyyy} ({daysUntil} päeva pärast).";
+            await SendEmailAsync(employeeEmail, subject, body, "Reminder", null);
         }
 
-        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        private async Task SendEmailAsync(string toEmail, string subject, string body, string type, int? requestId)
         {
+            var isMock = _configuration.GetValue<bool>("Email:UseMockEmail", true);
+            _logger.LogInformation("[EMAIL:{Type}] To={To} Subject={Subject}", type, toEmail, subject);
+
             try
             {
-                // For development: just log the email
-                var isDevelopment = _configuration.GetValue<bool>("Email:UseMockEmail", true);
-
-                if (isDevelopment)
+                _context.NotificationLogs.Add(new NotificationLog
                 {
-                    _logger.LogInformation(
-                        "📧 [MOCK EMAIL]\nTo: {ToEmail}\nSubject: {Subject}\nBody: {Body}",
-                        toEmail, subject, htmlBody
-                    );
-                    await Task.CompletedTask;
-                    return;
-                }
-
-                // For production: use SMTP
-                // Uncomment and configure when ready for production
-                /*
-                using var smtp = new SmtpClient(_configuration["Email:SmtpHost"], 
-                    int.Parse(_configuration["Email:SmtpPort"]));
-                smtp.Credentials = new NetworkCredential(
-                    _configuration["Email:SmtpUsername"], 
-                    _configuration["Email:SmtpPassword"]
-                );
-                smtp.EnableSsl = true;
-
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(_fromEmail, _fromName),
+                    RequestId = requestId,
+                    ToEmail = toEmail,
                     Subject = subject,
-                    Body = htmlBody,
-                    IsBodyHtml = true
-                };
-                mailMessage.To.Add(toEmail);
-
-                await smtp.SendMailAsync(mailMessage);
-                */
-
-                _logger.LogInformation("Email sent to {ToEmail}: {Subject}", toEmail, subject);
+                    Type = type,
+                    IsMock = isMock,
+                    SentAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email to {ToEmail}", toEmail);
+                _logger.LogWarning(ex, "Failed to save notification log for {Type}", type);
             }
+
+            await Task.CompletedTask;
         }
     }
 }

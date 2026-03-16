@@ -327,3 +327,66 @@
 .btn-cancel-inline:hover {
   background: #f3f4f8;
 }
+
+.list-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.filter-search {
+  flex: 1;
+  min-width: 160px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  font-size: 13px;
+}
+
+.filter-select {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  font-size: 13px;
+  min-width: 130px;
+}
+
+.filter-clear {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.filter-clear:hover {
+  background: #f3f4f8;
+}
+
+.filter-empty {
+  padding: 14px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  border: 1px dashed var(--color-border);
+  background: #fcfcfd;
+  margin-bottom: 12px;
+}
+
+.request-substitute {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.calendar-days-note {
+  font-size: 11px;
+  font-weight: 400;
+  color: #6e6e73;
+}

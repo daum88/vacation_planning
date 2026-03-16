@@ -15,6 +15,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddSingleton<IPublicHolidayService, PublicHolidayService>();
 
 // Configure SQLite database
 builder.Services.AddDbContext<VacationRequestContext>(options =>

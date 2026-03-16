@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using VacationRequestApi.Data;
 using VacationRequestApi.DTOs;
 using VacationRequestApi.Models;
+using VacationRequestApi.Services;
 
 namespace VacationRequestApi.Controllers
 {
@@ -12,11 +13,13 @@ namespace VacationRequestApi.Controllers
     {
         private readonly VacationRequestContext _context;
         private readonly ILogger<CalendarController> _logger;
+        private readonly IPublicHolidayService _publicHolidayService;
 
-        public CalendarController(VacationRequestContext context, ILogger<CalendarController> logger)
+        public CalendarController(VacationRequestContext context, ILogger<CalendarController> logger, IPublicHolidayService publicHolidayService)
         {
             _context = context;
             _logger = logger;
+            _publicHolidayService = publicHolidayService;
         }
 
         // GET: api/Calendar/team?startDate=2026-01-01&endDate=2026-12-31
@@ -166,6 +169,44 @@ namespace VacationRequestApi.Controllers
             {
                 _logger.LogError(ex, "Error retrieving departments");
                 return StatusCode(500, new { message = "Viga osakondade laadimisel." });
+            }
+        }
+
+        // GET: api/Calendar/holidays?year=2026
+        [HttpGet("holidays")]
+        public ActionResult<IEnumerable<PublicHolidayDto>> GetPublicHolidays([FromQuery] int? year = null)
+        {
+            var targetYear = year ?? DateTime.Now.Year;
+            var holidays = _publicHolidayService.GetEstonianPublicHolidaysNamed(targetYear);
+            return Ok(holidays.Select(h => new PublicHolidayDto { Date = h.Date, Name = h.Name }));
+        }
+
+        // GET: api/Calendar/blackouts
+        [HttpGet("blackouts")]
+        public async Task<ActionResult<IEnumerable<BlackoutPeriodDto>>> GetBlackouts()
+        {
+            try
+            {
+                var blackouts = await _context.BlackoutPeriods
+                    .Where(b => b.IsActive)
+                    .OrderBy(b => b.StartDate)
+                    .ToListAsync();
+
+                return Ok(blackouts.Select(b => new BlackoutPeriodDto
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    Description = b.Description,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    IsActive = b.IsActive,
+                    CreatedAt = b.CreatedAt
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching blackouts");
+                return StatusCode(500, new { message = "Viga laadimsel." });
             }
         }
     }

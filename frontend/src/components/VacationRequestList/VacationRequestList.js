@@ -10,7 +10,37 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
   const [loadingAudit, setLoadingAudit] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmWithdraw, setConfirmWithdraw] = useState(null);
+  const [filterYear, setFilterYear] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterLeaveType, setFilterLeaveType] = useState('');
+  const [searchText, setSearchText] = useState('');
   const toast = useToast();
+
+  const years = useMemo(() => {
+    const ys = new Set(requests.map(r => new Date(r.startDate).getFullYear()));
+    return Array.from(ys).sort((a, b) => b - a);
+  }, [requests]);
+
+  const leaveTypes = useMemo(() => {
+    const lt = new Map();
+    requests.forEach(r => { if (r.leaveTypeName) lt.set(r.leaveTypeName, r.leaveTypeColor); });
+    return Array.from(lt.entries());
+  }, [requests]);
+
+  const filtered = useMemo(() => {
+    return requests.filter(r => {
+      if (filterYear && new Date(r.startDate).getFullYear() !== parseInt(filterYear)) return false;
+      if (filterStatus && r.status !== filterStatus) return false;
+      if (filterLeaveType && r.leaveTypeName !== filterLeaveType) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        if (!r.comment?.toLowerCase().includes(q) &&
+            !r.leaveTypeName?.toLowerCase().includes(q) &&
+            !r.substituteName?.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [requests, filterYear, filterStatus, filterLeaveType, searchText]);
 
   const summary = useMemo(() => {
     const pending = requests.filter(r => r.status === 'Pending').length;
@@ -108,8 +138,42 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
         <div className="summary-chip rejected">{summary.rejected} tagasi lükatud</div>
       </div>
 
+      <div className="list-filter-bar">
+        <input
+          type="text"
+          className="filter-search"
+          placeholder="Otsi kommentaari, tüüpi..."
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+        />
+        <select className="filter-select" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+          <option value="">Kõik aastad</option>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <select className="filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="">Kõik staatused</option>
+          <option value="Pending">Ootel</option>
+          <option value="Approved">Kinnitatud</option>
+          <option value="Rejected">Tagasi lükatud</option>
+          <option value="Withdrawn">Tagasi võetud</option>
+        </select>
+        <select className="filter-select" value={filterLeaveType} onChange={e => setFilterLeaveType(e.target.value)}>
+          <option value="">Kõik tüübid</option>
+          {leaveTypes.map(([name]) => <option key={name} value={name}>{name}</option>)}
+        </select>
+        {(filterYear || filterStatus || filterLeaveType || searchText) && (
+          <button className="filter-clear" onClick={() => { setFilterYear(''); setFilterStatus(''); setFilterLeaveType(''); setSearchText(''); }}>
+            Tühista filtrid
+          </button>
+        )}
+      </div>
+
+      {filtered.length === 0 && requests.length > 0 && (
+        <div className="filter-empty">Filtritele vastavaid taotlusi ei leitud.</div>
+      )}
+
       <div className="requests-grid">
-        {requests.map((request) => (
+        {filtered.map((request) => (
           <div key={request.id} className={`request-card status-${request.status?.toLowerCase() || 'pending'}`}>
             {/* Header with dates and badges */}
             <div className="request-header">
@@ -126,7 +190,10 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
               </div>
               <div className="card-badges">
                 <div className="days-badge">
-                  {request.daysCount} {request.daysCount === 1 ? 'päev' : 'päeva'}
+                  {request.daysCount} tööpäeva
+                  {request.calendarDaysCount && request.calendarDaysCount !== request.daysCount && (
+                    <span className="calendar-days-note"> ({request.calendarDaysCount} kp)</span>
+                  )}
                 </div>
                 {request.status && (
                   <div className={`status-badge-small ${request.status.toLowerCase()}`}>
@@ -151,6 +218,13 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
               <div className="request-comment">
                 <strong>Kommentaar:</strong>
                 <p>{request.comment}</p>
+              </div>
+            )}
+
+            {/* Substitute */}
+            {request.substituteName && (
+              <div className="request-substitute">
+                Asendaja: <strong>{request.substituteName}</strong>
               </div>
             )}
 

@@ -28,10 +28,25 @@
   background: #fff7e8;
   border: 1px solid #ffe3b2;
   color: #8a5a00;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 10px 12px;
   margin-bottom: var(--space-md);
   font-size: 14px;
+}
+
+.blackout-warning {
+  background: #fff0f0;
+  border: 1px solid #ffb3b3;
+  border-left: 3px solid var(--color-error);
+  padding: 10px 12px;
+  margin-bottom: var(--space-md);
+  font-size: 13px;
+  color: #7a0000;
+}
+
+.blackout-item {
+  margin-top: 4px;
+  padding-left: 8px;
 }
 
 .form-section {
@@ -138,6 +153,13 @@
 .days-remaining-preview {
   font-size: 13px;
   color: var(--color-text-secondary);
+}
+
+.holiday-note {
+  color: #855100;
+  background: #fff4df;
+  padding: 2px 7px;
+  border: 1px solid #ffdca1;
 }
 
 .leave-type-info {
