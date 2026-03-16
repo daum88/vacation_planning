@@ -20,15 +20,14 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddDbContext<VacationRequestContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS configuration
+// CORS configuration - Allow all for development
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:8080", "http://localhost:8080")
+        policy.AllowAnyOrigin()
               .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowAnyHeader();
     });
 });
 
