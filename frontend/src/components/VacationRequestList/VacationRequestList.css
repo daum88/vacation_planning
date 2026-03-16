@@ -1,7 +1,7 @@
 .list-container {
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 6px;
   padding: 18px;
 }
 
@@ -61,7 +61,7 @@
 .request-card {
   background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -228,7 +228,7 @@
 .btn {
   height: 34px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: 4px;
   border: 1px solid var(--color-border);
   background: #fff;
   font-size: 13px;

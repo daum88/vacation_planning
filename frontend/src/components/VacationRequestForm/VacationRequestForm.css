@@ -20,7 +20,7 @@
 .vacation-request-form {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: var(--space-lg);
 }
 
@@ -78,7 +78,7 @@
   height: 40px;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 4px;
   background: #fff;
   color: var(--color-text-primary);
   font-size: 15px;
@@ -297,7 +297,7 @@
 .btn-secondary {
   height: 40px;
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 15px;
   font-weight: 600;
 }
