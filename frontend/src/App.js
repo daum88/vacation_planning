@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import VacationRequestForm from './components/VacationRequestForm/VacationRequestForm';
 import VacationRequestList from './components/VacationRequestList/VacationRequestList';
+import Statistics from './components/Statistics/Statistics';
 import { vacationRequestsApi } from './api/api';
 import './App.css';
 
@@ -9,6 +10,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [editingRequest, setEditingRequest] = useState(null);
   const [error, setError] = useState(null);
+  const [showStatistics, setShowStatistics] = useState(false);
 
   const fetchRequests = async () => {
     try {
@@ -35,6 +37,7 @@ function App() {
 
   const handleEdit = (request) => {
     setEditingRequest(request);
+    setShowStatistics(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -52,6 +55,10 @@ function App() {
 
   const handleCancelEdit = () => {
     setEditingRequest(null);
+  };
+
+  const toggleStatistics = () => {
+    setShowStatistics(!showStatistics);
   };
 
   return (
@@ -74,18 +81,39 @@ function App() {
             </div>
           )}
 
-          <VacationRequestForm
-            onSuccess={handleSuccess}
-            editRequest={editingRequest}
-            onCancel={handleCancelEdit}
-          />
+          <div className="view-toggle">
+            <button 
+              className={`toggle-btn ${!showStatistics ? 'active' : ''}`}
+              onClick={() => setShowStatistics(false)}
+            >
+              📝 Taotlused
+            </button>
+            <button 
+              className={`toggle-btn ${showStatistics ? 'active' : ''}`}
+              onClick={toggleStatistics}
+            >
+              📊 Statistika
+            </button>
+          </div>
 
-          <VacationRequestList
-            requests={requests}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            loading={loading}
-          />
+          {!showStatistics ? (
+            <>
+              <VacationRequestForm
+                onSuccess={handleSuccess}
+                editRequest={editingRequest}
+                onCancel={handleCancelEdit}
+              />
+
+              <VacationRequestList
+                requests={requests}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                loading={loading}
+              />
+            </>
+          ) : (
+            <Statistics key={requests.length} />
+          )}
         </div>
       </main>
 
