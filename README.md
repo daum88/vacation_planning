@@ -1,53 +1,119 @@
 # Puhkusetaotluste Haldamise Rakendus
 
-Lihtne CRUD veebirakendus ettevõtte töötajate puhkusesoovide haldamiseks.
+Täisfunktsionaalne CRUD veebirakendus ettevõtte töötajate puhkusesoovide haldamiseks.
 
-## Arhitektuur
-
-Rakendus koosneb kolmest komponendist:
-
-1. **Frontend** - React rakendus (Node.js server, port 8080)
-2. **Backend** - ASP.NET Core REST API (port 5001)
-3. **Andmebaas** - SQLite
-
-## Funktsionaalsus
-
-- ✅ Puhkusesoovide loomine
-- ✅ Olemasolevate taotluste vaatamine
-- ✅ Taotluste muutmine
-- ✅ Taotluste kustutamine
-- ✅ Automaatne päevade arvu arvutamine
-- ✅ Validatsioon (alguskuupäev peab olema enne lõppkuupäeva)
-- ✅ Kontrollimine kattuvate perioodide vältimiseks
-
-## Tehnoloogiad
-
-### Backend
-- ASP.NET Core 8.0
-- Entity Framework Core
-- SQLite
-- Swagger UI (API dokumentatsioon)
-
-### Frontend
-- React 18
-- Axios (HTTP klient)
-- CSS3 (responsive disain)
-
-## Eeldused
-
-- [.NET SDK 8.0](https://dotnet.microsoft.com/download) või uuem
-- [Node.js](https://nodejs.org/) (v18 või uuem) ja npm
-
-## Paigaldamine ja Käivitamine
-
-### 1. Kloonige repositoorium
+## ⚡ Kiirkäivitus
 
 ```bash
-git clone [repository-url]
-cd vacation-request-app
+# 1. Käivita automaatne setup
+./setup.sh
+
+# 2. Käivita backend (uus terminal)
+./start-backend.sh
+# või
+cd backend && dotnet run
+
+# 3. Käivita frontend (veel üks uus terminal)
+./start-frontend.sh
+# või
+cd frontend && npm install && npm start
 ```
 
-### 2. Backend käivitamine
+Rakendus avaneb automaatselt aadressil: **https://localhost:8080**
+
+## 🎯 Funktsionaalsus
+
+### ✅ Põhifunktsioonid (CRUD)
+- **Create**: Uute puhkusetaotluste loomine
+- **Read**: Kõikide taotluste vaatamine kaartidena
+- **Update**: Olemasolevate taotluste muutmine
+- **Delete**: Taotluste kustutamine kinnitusdialogiga
+
+### ✅ Validatsioonid
+- Alguskuupäev ei saa olla minevikus (uute taotluste puhul)
+- Ühe päeva puhkus on lubatud (start === end)
+- Maksimaalne puhkuse kestus: 90 päeva
+- Kattuvate perioodide automaatne blokeerimine
+- Real-time vorm validatsioon visuaalse tagasisidega
+- XSS kaitse kommentaaride väljal
+
+### ✅ Statistika & Analüüs
+- **Dashboard**: Visuaalne ülevaade puhkustest
+  - Kokku päevi (kogu aeg)
+  - Kokku taotlusi
+  - Päevi käesoleval aastal
+  - Tulevaste puhkuste arv
+  - Järgmise puhkuse kuupäev
+- **Kuude kaupa jaotus**: Viimased 12 kuud graafiliselt
+- **Toggle vaade**: Lihtne vahetus taotluste ja statistika vahel
+
+### ✅ Ekspordi Funktsioonid
+- **CSV eksport**:
+  - Kõik taotlused ühes failis
+  - Excel'is avatav
+  - Eesti keelsed päised
+- **iCalendar (.ics) eksport**:
+  - Google Calendar import
+  - Outlook import
+  - Apple Calendar import
+  - RFC 5545 standard formaat
+
+### ✅ Kasutajakogemus
+- Responsive disain (mobile, tablet, desktop)
+- Automaatne päevade arvu arvutamine
+- Loading state'id
+- Error handling koos retry funktsiooniga
+- Smooth animatsioonid ja hover efektid
+- Empty state kui taotlusi pole
+
+## 📋 Nõuded
+
+- [.NET SDK 8.0](https://dotnet.microsoft.com/download) või uuem
+- [Node.js](https://nodejs.org/) v18 või uuem ja npm
+
+## 🏗️ Arhitektuur
+
+```
+┌─────────────────┐      HTTPS       ┌─────────────────┐      ┌──────────┐
+│  React Frontend │ ◄────REST API───► │ ASP.NET Backend │ ◄───►│  SQLite  │
+│   Port 8080     │                   │   Port 5001     │      │    DB    │
+└─────────────────┘                   └─────────────────┘      └──────────┘
+```
+
+### Backend (ASP.NET Core 8.0)
+- **REST API** kontroller kõikide operatsioonidega
+- **Entity Framework Core** ORM
+- **SQLite** andmebaas (fail: `vacationrequests.db`)
+- **Swagger UI** API dokumentatsioon
+- **ILogger** structured logging
+- **CORS** konfigureeritud frontendile
+
+### Frontend (React 18)
+- **Functional components** koos Hooks'idega
+- **Axios** HTTP klient
+- **CSS3** responsive disain ilma frameworkita
+- **Modern JavaScript** (ES6+)
+
+## 🚀 Käivitamine
+
+## 🚀 Käivitamine
+
+### Automaatne Setup (Soovitatav)
+
+```bash
+# 1. Käivita setup skript
+./setup.sh
+
+# 2. Käivita backend
+./start-backend.sh  # või: cd backend && dotnet run
+
+# 3. Käivita frontend (uus terminal)
+./start-frontend.sh  # või: cd frontend && npm start
+```
+
+### Manuaalne Setup
+
+#### Backend
 
 ```bash
 cd backend
@@ -58,9 +124,21 @@ dotnet run
 Backend käivitub aadressil: `https://localhost:5001`
 Swagger UI: `https://localhost:5001/swagger`
 
-### 3. Frontend käivitamine
+#### Backend
 
-Avage uus terminali aken:
+```bash
+cd backend
+dotnet restore
+dotnet run
+```
+
+**Backend käivitub:**
+- API: `https://localhost:5001`
+- Swagger: `https://localhost:5001/swagger`
+
+#### Frontend
+
+Avage uus terminal:
 
 ```bash
 cd frontend
@@ -68,9 +146,11 @@ npm install
 npm start
 ```
 
-Frontend käivitub aadressil: `https://localhost:8080`
+**Frontend käivitub:**
+- URL: `https://localhost:8080`
+- Avaneb automaatselt brauseris
 
-## Kasutamine
+## 📖 Kasutamine
 
 1. Avage brauser ja minge aadressile `https://localhost:8080`
 2. Täitke vorm uue puhkusetaotluse loomiseks:

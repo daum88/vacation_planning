@@ -25,7 +25,36 @@ namespace VacationRequestApi.Data
                 entity.Property(e => e.Comment).HasMaxLength(500);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
+                
+                // SQLite doesn't support rowversion, but we can use a simple integer version
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion()
+                    .HasDefaultValue(new byte[0]);
             });
+        }
+
+        public override int SaveChanges()
+        {
+            UpdateTimestamps();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            UpdateTimestamps();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void UpdateTimestamps()
+        {
+            var entries = ChangeTracker.Entries<VacationRequest>();
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                }
+            }
         }
     }
 }
