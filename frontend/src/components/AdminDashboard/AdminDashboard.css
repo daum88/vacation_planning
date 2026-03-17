@@ -921,3 +921,14 @@
   .a-row-meta { display: none; }
   .a-table td, .a-table th { padding: 7px 8px; }
 }
+
+/* Own-request lock note */
+.a-own-request-note {
+  margin-top: 6px;
+  padding: 7px 10px;
+  background: #fffbf0;
+  border: 1px solid #f0d9a0;
+  border-left: 3px solid #f5a623;
+  font-size: 12px;
+  color: #6b4a00;
+}

@@ -31,7 +31,7 @@ const StatusBadge = ({ status }) => {
   return <span className={`a-status ${m.cls}`}>{m.label}</span>;
 };
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ currentAdminUserId }) => {
   const [allRequests, setAllRequests]       = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [users, setUsers]                   = useState([]);
@@ -433,7 +433,13 @@ const AdminDashboard = () => {
                       )}
 
                       {/* Approve form */}
-                      {req.status === 'Pending' && approvingId === req.id && (
+                      {req.status === 'Pending' && req.userId === currentAdminUserId && (
+                        <div className="a-own-request-note">
+                          Oma taotlust ei saa kinnitada — peab kinnitama teine administraator.
+                        </div>
+                      )}
+
+                      {req.status === 'Pending' && req.userId !== currentAdminUserId && approvingId === req.id && (
                         <div className="a-approve-form">
                           <textarea
                             className="a-approve-textarea"
@@ -462,7 +468,7 @@ const AdminDashboard = () => {
 
                       {/* Row actions */}
                       <div className="a-row-actions">
-                        {req.status === 'Pending' && approvingId !== req.id && (
+                        {req.status === 'Pending' && approvingId !== req.id && req.userId !== currentAdminUserId && (
                           <button
                             className="a-action-btn"
                             onClick={() => setApprovingId(req.id)}

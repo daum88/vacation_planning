@@ -624,6 +624,12 @@ namespace VacationRequestApi.Controllers
                     return BadRequest(new { message = "Ainult ootel taotlusi saab kinnitada või tagasi lükata." });
                 }
 
+                // Admin cannot approve their own request
+                if (vacationRequest.UserId == adminUserId)
+                {
+                    return BadRequest(new { message = "Admin ei saa oma puhkusetaotlust kinnitada." });
+                }
+
                 var oldStatus = vacationRequest.Status;
                 vacationRequest.Status = dto.Approved ? VacationRequestStatus.Approved : VacationRequestStatus.Rejected;
                 vacationRequest.ApprovedByUserId = adminUserId;
@@ -1101,6 +1107,7 @@ namespace VacationRequestApi.Controllers
 
                     if (vr == null) { result.Failed++; result.Errors.Add($"#{item.Id}: ei leitud"); continue; }
                     if (vr.Status != VacationRequestStatus.Pending) { result.Failed++; result.Errors.Add($"#{item.Id}: pole ootel"); continue; }
+                    if (vr.UserId == adminUserId) { result.Failed++; result.Errors.Add($"#{item.Id}: oma taotlust ei saa kinnitada"); continue; }
 
                     vr.Status = item.Approved ? VacationRequestStatus.Approved : VacationRequestStatus.Rejected;
                     vr.ApprovedByUserId = adminUserId;
