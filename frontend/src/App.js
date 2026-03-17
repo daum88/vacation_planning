@@ -5,7 +5,7 @@ import Statistics from './components/Statistics/Statistics';
 import AdminDashboard from './components/AdminDashboard/AdminDashboard';
 import TeamCalendar from './components/TeamCalendar/TeamCalendar';
 import YearTimeline from './components/YearTimeline/YearTimeline';
-import { ToastProvider, useToast } from './components/Toast/Toast';
+import { useToast } from './components/Toast/Toast';
 import { vacationRequestsApi, usersApi, setUserId, getCurrentUserId } from './api/api';
 import './App.css';
 
@@ -84,7 +84,7 @@ const UserPicker = ({ users, currentUser, onSelect }) => {
 };
 
 // ── Main app ───────────────────────────────────────────────────────────
-function AppContent() {
+function App() {
   const [requests, setRequests]       = useState([]);
   const [users, setUsers]             = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -360,14 +360,6 @@ function AppContent() {
         </p>
       </footer>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
   );
 }
 
