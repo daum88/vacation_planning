@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { formatDate } from '../../utils/dateUtils';
+import { downloadBlob } from '../../utils/fileUtils';
 import { vacationRequestsApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
 import CommentThread from '../CommentThread/CommentThread';
 import CustomSelect from '../CustomSelect/CustomSelect';
+import StatusBadge from '../StatusBadge/StatusBadge';
 import './VacationRequestList.css';
 
-const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }) => {
+const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, onRefresh, loading }) => {
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [auditLogs, setAuditLogs] = useState({});
   const [loadingAudit, setLoadingAudit] = useState({});
@@ -68,7 +70,6 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
       const response = await vacationRequestsApi.getAuditLogs(requestId);
       setAuditLogs(prev => ({ ...prev, [requestId]: response.data }));
     } catch (err) {
-      console.error('Error fetching audit logs:', err);
       toast.error('Viga auditi logide laadimisel');
     } finally {
       setLoadingAudit(prev => ({ ...prev, [requestId]: false }));
@@ -77,17 +78,10 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
 
   const handleDownloadAttachment = async (requestId, attachmentId, fileName) => {
     try {
-      const response = await vacationRequestsApi.downloadAttachment(requestId, attachmentId);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success(`Fail ${fileName} allalaaditud ✓`);
-    } catch (err) {
-      console.error('Error downloading attachment:', err);
+      const r = await vacationRequestsApi.downloadAttachment(requestId, attachmentId);
+      downloadBlob(r.data, fileName);
+      toast.success(`${fileName} alla laaditud`);
+    } catch {
       toast.error('Viga faili allalaadimisel');
     }
   };
@@ -96,8 +90,8 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
     try {
       await vacationRequestsApi.deleteAttachment(requestId, attachmentId);
       toast.success('Manus kustutatud');
-    } catch (err) {
-      console.error('Error deleting attachment:', err);
+      onRefresh?.();
+    } catch {
       toast.error('Viga manuse kustutamisel');
     }
   };
@@ -131,7 +125,6 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
     <div className="list-container">
       <div className="list-header">
         <h2>Minu puhkusetaotlused ({requests.length})</h2>
-        <p>Hoia silm peal, mis on ootel ja mis on kinnitatud.</p>
       </div>
 
       <div className="list-summary-row">
@@ -217,14 +210,7 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
                     <span className="calendar-days-note"> ({request.calendarDaysCount} kp)</span>
                   )}
                 </div>
-                {request.status && (
-                  <div className={`status-badge-small ${request.status.toLowerCase()}`}>
-                    {request.status === 'Pending' && 'Ootel'}
-                    {request.status === 'Approved' && 'Kinnitatud'}
-                    {request.status === 'Rejected' && 'Tagasi lükatud'}
-                    {request.status === 'Withdrawn' && 'Tagasi võetud'}
-                  </div>
-                )}
+                {request.status && <StatusBadge status={request.status} />}
               </div>
             </div>
 

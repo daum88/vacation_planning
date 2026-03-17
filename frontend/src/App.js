@@ -119,14 +119,14 @@ function AppContent() {
     try {
       const r = await usersApi.getAll();
       setUsers(r.data);
-    } catch (e) { console.error(e); }
+    } catch { /* non-critical, users list just won't populate */ }
   };
 
   const fetchCurrentUser = async () => {
     try {
       const r = await usersApi.getCurrent();
       setCurrentUser(r.data);
-    } catch (e) { console.error(e); }
+    } catch { /* handled silently; UI degrades gracefully */ }
   };
 
   const fetchRequests = async () => {
@@ -208,6 +208,7 @@ function AppContent() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onWithdraw={handleWithdraw}
+                onRefresh={fetchRequests}
                 loading={loading}
               />
             </section>

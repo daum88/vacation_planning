@@ -9,40 +9,24 @@ namespace VacationRequestApi.Services
     public class UserService : IUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly Data.VacationRequestContext _context;
 
-        public UserService(IHttpContextAccessor httpContextAccessor)
+        public UserService(IHttpContextAccessor httpContextAccessor, Data.VacationRequestContext context)
         {
             _httpContextAccessor = httpContextAccessor;
+            _context = context;
         }
 
         public int GetCurrentUserId()
         {
-            // Check query parameter for user role simulation
-            var context = _httpContextAccessor.HttpContext;
-            if (context != null)
-            {
-                var userIdParam = context.Request.Query["userId"].FirstOrDefault();
-                if (!string.IsNullOrEmpty(userIdParam) && int.TryParse(userIdParam, out int userId))
-                {
-                    return userId;
-                }
-            }
-
-            // Default employee user
-            return 1;
+            var param = _httpContextAccessor.HttpContext?.Request.Query["userId"].FirstOrDefault();
+            return (!string.IsNullOrEmpty(param) && int.TryParse(param, out int id)) ? id : 1;
         }
 
         public bool IsAdmin()
         {
-            // Check query parameter for admin role simulation
-            var context = _httpContextAccessor.HttpContext;
-            if (context != null)
-            {
-                var roleParam = context.Request.Query["role"].FirstOrDefault();
-                return roleParam?.ToLower() == "admin";
-            }
-
-            return false;
+            var userId = GetCurrentUserId();
+            return _context.Users.Find(userId)?.IsAdmin ?? false;
         }
     }
 }

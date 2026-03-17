@@ -8,6 +8,7 @@ import { useToast } from '../Toast/Toast';
 import CommentThread from '../CommentThread/CommentThread';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import DatePicker from '../DatePicker/DatePicker';
+import StatusBadge from '../StatusBadge/StatusBadge';
 import './AdminDashboard.css';
 
 const TABS = [
@@ -19,17 +20,6 @@ const TABS = [
   { id: 'notifications', label: 'Teavituste logi' },
 ];
 
-const STATUS_META = {
-  Pending:   { label: 'Ootel',           cls: 'st-pending' },
-  Approved:  { label: 'Kinnitatud',      cls: 'st-approved' },
-  Rejected:  { label: 'Tagasi lükatud', cls: 'st-rejected' },
-  Withdrawn: { label: 'Tagasi võetud',  cls: 'st-withdrawn' },
-};
-
-const StatusBadge = ({ status }) => {
-  const m = STATUS_META[status] || STATUS_META.Pending;
-  return <span className={`a-status ${m.cls}`}>{m.label}</span>;
-};
 
 const AdminDashboard = ({ currentAdminUserId }) => {
   const [allRequests, setAllRequests]       = useState([]);
@@ -90,7 +80,7 @@ const AdminDashboard = ({ currentAdminUserId }) => {
     try {
       const res = await notificationsApi.getAll(50);
       setNotifications(res.data);
-    } catch (err) { console.error('Notifications error', err); }
+    } catch { /* notifications unavailable */ }
   };
 
   useEffect(() => {

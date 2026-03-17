@@ -27,7 +27,6 @@ const CommentThread = ({ requestId, isAdmin }) => {
       const res = await vacationRequestsApi.getComments(requestId);
       setComments(res.data);
     } catch (err) {
-      console.error('Error loading comments', err);
     } finally {
       setLoading(false);
     }

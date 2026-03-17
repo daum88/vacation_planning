@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calendarApi } from '../../api/api';
+import { MONTHS_FULL, WEEKDAYS_SHORT } from '../../utils/locale';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import './TeamCalendar.css';
 
@@ -24,7 +25,6 @@ const TeamCalendar = () => {
       const response = await calendarApi.getDepartments();
       setDepartments(response.data);
     } catch (err) {
-      console.error('Error fetching departments:', err);
     }
   };
 
@@ -44,7 +44,6 @@ const TeamCalendar = () => {
 
       setCalendarData(response.data);
     } catch (err) {
-      console.error('Error fetching calendar:', err);
       setError(err.message || 'Viga kalendri laadimisel');
     } finally {
       setLoading(false);
@@ -91,10 +90,6 @@ const TeamCalendar = () => {
     const dateKey = date.toISOString().split('T')[0];
     return calendarData.dailyAbsenceCount[dateKey] || 0;
   };
-
-  const monthNames = ['Jaanuar', 'Veebruar', 'Märts', 'Aprill', 'Mai', 'Juuni',
-                      'Juuli', 'August', 'September', 'Oktoober', 'November', 'Detsember'];
-  const weekDays = ['E', 'T', 'K', 'N', 'R', 'L', 'P'];
 
   const maxAbsence = useMemo(() => {
     if (!calendarData?.dailyAbsenceCount) return 0;
@@ -157,7 +152,7 @@ const TeamCalendar = () => {
 
           <div className="month-nav">
             <button onClick={() => changeMonth(-1)} className="btn-nav" aria-label="Eelmine kuu">‹</button>
-            <h3>{monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}</h3>
+            <h3>{MONTHS_FULL[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}</h3>
             <button onClick={() => changeMonth(1)} className="btn-nav" aria-label="Järgmine kuu">›</button>
           </div>
         </div>
@@ -181,7 +176,7 @@ const TeamCalendar = () => {
       <section className="calendar-layout">
         <div className="calendar-board">
           <div className="calendar-weekdays">
-            {weekDays.map(day => (
+            {WEEKDAYS_SHORT.map(day => (
               <div key={day} className="weekday">{day}</div>
             ))}
           </div>

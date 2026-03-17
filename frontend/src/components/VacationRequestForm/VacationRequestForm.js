@@ -4,7 +4,7 @@ import {
   calendarApi, blackoutPeriodsApi, departmentCapacityApi
 } from '../../api/api';
 import { useToast } from '../Toast/Toast';
-import { countWorkingDays, countCalendarDays, getHolidaysInRange } from '../../utils/dateUtils';
+import { countWorkingDays, countCalendarDays, getHolidaysInRange, toISOStr } from '../../utils/dateUtils';
 import DateSuggester from '../DateSuggester/DateSuggester';
 import DatePicker from '../DatePicker/DatePicker';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -43,8 +43,8 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     if (editRequest) {
       setFormData({
         leaveTypeId: editRequest.leaveTypeId || 1,
-        startDate: formatDateStr(editRequest.startDate),
-        endDate:   formatDateStr(editRequest.endDate),
+        startDate: toISOStr(editRequest.startDate),
+        endDate:   toISOStr(editRequest.endDate),
         comment:   editRequest.comment || '',
         substituteName: editRequest.substituteName || '',
       });
@@ -67,7 +67,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     try {
       const r = await leaveTypesApi.getAll();
       setLeaveTypes(r.data);
-    } catch (e) { console.error(e); }
+    } catch { /* leave types unavailable */ }
   };
 
   const fetchUserBalance = async (uid) => {
@@ -78,21 +78,21 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
       ]);
       setUserBalance(balRes.data);
       setUserDepartment(userRes.data.department || '');
-    } catch (e) { console.error(e); }
+    } catch { /* balance unavailable */ }
   };
 
   const fetchBlackouts = async () => {
     try {
       const r = await blackoutPeriodsApi.getAll();
       setBlackouts(r.data);
-    } catch (e) { console.error(e); }
+    } catch { /* blackouts unavailable */ }
   };
 
   const checkConflicts = async () => {
     try {
       const r = await calendarApi.checkConflicts(formData.startDate, formData.endDate, editRequest?.id);
       setConflicts(r.data);
-    } catch (e) { console.error(e); }
+    } catch { setConflicts(null); }
   };
 
   const checkCapacity = async () => {
@@ -102,7 +102,6 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     } catch { setCapacityWarning(null); }
   };
 
-  const formatDateStr = (s) => s ? new Date(s).toISOString().split('T')[0] : '';
 
   const getActiveBlackouts = () => {
     if (!formData.startDate || !formData.endDate) return [];
@@ -114,7 +113,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
 
   const validateForm = () => {
     const next = {};
-    const today = new Date().toISOString().split('T')[0];
+    const today = toISOStr(new Date());
 
     if (!formData.startDate) { next.startDate = 'Alguskuupäev on kohustuslik'; }
     else if (!editRequest && formData.startDate < today) { next.startDate = 'Alguskuupäev ei saa olla minevikus'; }
@@ -205,7 +204,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     ? getHolidaysInRange(formData.startDate, formData.endDate) : [];
   const activeBlackouts  = getActiveBlackouts();
   const selectedLeaveType = leaveTypes.find(lt => lt.id === parseInt(formData.leaveTypeId));
-  const today = new Date().toISOString().split('T')[0];
+  const today = toISOStr(new Date());
 
   // CustomSelect options for leave types
   const leaveTypeOptions = leaveTypes.map(lt => ({
@@ -219,7 +218,6 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     <div className="vacation-request-form-container">
       <div className="form-header">
         <h2>{editRequest ? 'Muuda taotlust' : 'Uus puhkuse taotlus'}</h2>
-        <p className="form-subtitle">Planeeri kuupäevad, lisa kontekst ja saada taotlus kinnitamiseks.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="vacation-request-form">

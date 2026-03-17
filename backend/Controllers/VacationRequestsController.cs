@@ -40,7 +40,6 @@ namespace VacationRequestApi.Controllers
             _publicHolidayService = publicHolidayService;
         }
 
-        // GET: api/VacationRequests - with filtering
         [HttpGet]
         public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetVacationRequests(
             [FromQuery] VacationRequestFilterDto? filter = null)
@@ -57,7 +56,6 @@ namespace VacationRequestApi.Controllers
                     .Include(vr => vr.Attachments)
                     .AsQueryable();
 
-                // Non-admin users can only see their own requests
                 if (!isAdmin)
                 {
                     query = query.Where(vr => vr.UserId == userId);
@@ -155,7 +153,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // GET: api/VacationRequests/5
         [HttpGet("{id}")]
         public async Task<ActionResult<VacationRequestResponseDto>> GetVacationRequest(int id)
         {
@@ -176,7 +173,6 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Check permissions
                 if (!isAdmin && vacationRequest.UserId != userId)
                 {
                     return Forbid();
@@ -191,7 +187,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // POST: api/VacationRequests
         [HttpPost]
         public async Task<ActionResult<VacationRequestResponseDto>> PostVacationRequest(
             [FromBody] VacationRequestCreateDto dto)
@@ -206,14 +201,12 @@ namespace VacationRequestApi.Controllers
                     return NotFound(new { message = "Kasutajat ei leitud." });
                 }
 
-                // Validate dates
                 var validationError = ValidateDates(dto.StartDate, dto.EndDate, userId);
                 if (validationError != null)
                 {
                     return BadRequest(new { message = validationError });
                 }
 
-                // Check for overlapping requests
                 var hasOverlap = await HasOverlappingRequests(userId, dto.StartDate, dto.EndDate);
                 if (hasOverlap)
                 {
@@ -244,17 +237,14 @@ namespace VacationRequestApi.Controllers
                     }
                 }
 
-                // Sanitize comment
                 var sanitizedComment = SanitizeInput(dto.Comment);
 
-                // Check leave type
                 var leaveType = await _context.LeaveTypes.FindAsync(dto.LeaveTypeId);
                 if (leaveType == null || !leaveType.IsActive)
                 {
                     return BadRequest(new { message = "Vale puhkuse tüüp." });
                 }
 
-                // Check balance using working days
                 var daysRequested = _publicHolidayService.CountWorkingDays(dto.StartDate.Date, dto.EndDate.Date);
                 if (user.RemainingLeaveDays < daysRequested && leaveType.IsPaid)
                 {
@@ -280,7 +270,6 @@ namespace VacationRequestApi.Controllers
                 _context.VacationRequests.Add(vacationRequest);
                 await _context.SaveChangesAsync();
 
-                // Audit log
                 await _auditService.LogActionAsync(
                     vacationRequest.Id,
                     userId,
@@ -292,7 +281,6 @@ namespace VacationRequestApi.Controllers
                     GetUserAgent()
                 );
 
-                // Send emails
                 await _emailService.SendRequestSubmittedEmailAsync(vacationRequest.Id, user.FullName, user.Email);
                 
                 if (leaveType.RequiresApproval)
@@ -303,7 +291,6 @@ namespace VacationRequestApi.Controllers
 
                 _logger.LogInformation("Vacation request {Id} created by user {UserId}", vacationRequest.Id, userId);
 
-                // Reload with includes
                 vacationRequest = await _context.VacationRequests
                     .Include(vr => vr.User)
                     .Include(vr => vr.LeaveType)
@@ -320,7 +307,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // PUT: api/VacationRequests/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutVacationRequest(int id, [FromBody] VacationRequestUpdateDto dto)
         {
@@ -339,19 +325,16 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Check permissions
                 if (!isAdmin && vacationRequest.UserId != userId)
                 {
                     return Forbid();
                 }
 
-                // Can only edit pending requests
                 if (vacationRequest.Status != VacationRequestStatus.Pending && !isAdmin)
                 {
                     return BadRequest(new { message = "Ainult ootel taotlusi saab muuta." });
                 }
 
-                // Store old values for audit
                 var oldValues = new
                 {
                     vacationRequest.StartDate,
@@ -360,21 +343,18 @@ namespace VacationRequestApi.Controllers
                     vacationRequest.Comment
                 };
 
-                // Validate new dates
                 var validationError = ValidateDates(dto.StartDate, dto.EndDate, userId, id);
                 if (validationError != null)
                 {
                     return BadRequest(new { message = validationError });
                 }
 
-                // Check for overlapping requests (excluding current)
                 var hasOverlap = await HasOverlappingRequests(userId, dto.StartDate, dto.EndDate, id);
                 if (hasOverlap)
                 {
                     return Conflict(new { message = "Sellel perioodil on juba puhkusetaotlus olemas." });
                 }
 
-                // Update fields
                 vacationRequest.LeaveTypeId = dto.LeaveTypeId;
                 vacationRequest.StartDate = dto.StartDate.Date;
                 vacationRequest.EndDate = dto.EndDate.Date;
@@ -418,7 +398,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // DELETE: api/VacationRequests/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVacationRequest(int id)
         {
@@ -436,13 +415,11 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Check permissions
                 if (!isAdmin && vacationRequest.UserId != userId)
                 {
                     return Forbid();
                 }
 
-                // Delete associated files
                 foreach (var attachment in vacationRequest.Attachments)
                 {
                     await _fileStorageService.DeleteFileAsync(attachment.FilePath);
@@ -451,7 +428,6 @@ namespace VacationRequestApi.Controllers
                 _context.VacationRequests.Remove(vacationRequest);
                 await _context.SaveChangesAsync();
 
-                // Audit log
                 await _auditService.LogActionAsync(
                     id,
                     userId,
@@ -474,7 +450,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // POST: api/VacationRequests/5/withdraw
         [HttpPost("{id}/withdraw")]
         public async Task<IActionResult> WithdrawVacationRequest(int id)
         {
@@ -491,13 +466,11 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Only owner can withdraw
                 if (vacationRequest.UserId != userId)
                 {
                     return Forbid();
                 }
 
-                // Can only withdraw pending or approved requests
                 if (vacationRequest.Status != VacationRequestStatus.Pending &&
                     vacationRequest.Status != VacationRequestStatus.Approved)
                 {
@@ -510,7 +483,6 @@ namespace VacationRequestApi.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Audit log
                 await _auditService.LogActionAsync(
                     id,
                     userId,
@@ -533,7 +505,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // GET: api/VacationRequests/5/audit
         [HttpGet("{id}/audit")]
         public async Task<ActionResult<IEnumerable<AuditLogDto>>> GetAuditLogs(int id)
         {
@@ -548,7 +519,6 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Check permissions
                 if (!isAdmin && vacationRequest.UserId != userId)
                 {
                     return Forbid();
@@ -576,9 +546,7 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // ADMIN ENDPOINTS
 
-        // GET: api/VacationRequests/admin/all
         [HttpGet("admin/all")]
         public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetAllVacationRequestsAdmin(
             [FromQuery] VacationRequestFilterDto? filter = null)
@@ -587,7 +555,6 @@ namespace VacationRequestApi.Controllers
             return await GetVacationRequests(filter);
         }
 
-        // GET: api/VacationRequests/admin/pending
         [HttpGet("admin/pending")]
         public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetPendingVacationRequestsAdmin()
         {
@@ -595,7 +562,6 @@ namespace VacationRequestApi.Controllers
             return await GetVacationRequests(filter);
         }
 
-        // POST: api/VacationRequests/admin/approve/5
         [HttpPost("admin/approve/{id}")]
         public async Task<IActionResult> ApproveVacationRequest(int id, [FromBody] ApprovalDto dto)
         {
@@ -637,7 +603,6 @@ namespace VacationRequestApi.Controllers
                 vacationRequest.AdminComment = dto.AdminComment?.Trim();
                 vacationRequest.UpdatedAt = DateTime.UtcNow;
 
-                // Update user's used days if approved (working days only)
                 if (dto.Approved && vacationRequest.User != null && vacationRequest.LeaveType?.IsPaid == true)
                 {
                     var daysCount = _publicHolidayService.CountWorkingDays(
@@ -647,7 +612,6 @@ namespace VacationRequestApi.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Audit log
                 await _auditService.LogActionAsync(
                     id,
                     adminUserId,
@@ -659,7 +623,6 @@ namespace VacationRequestApi.Controllers
                     GetUserAgent()
                 );
 
-                // Send email notification
                 if (vacationRequest.User != null)
                 {
                     if (dto.Approved)
@@ -677,7 +640,6 @@ namespace VacationRequestApi.Controllers
                 var statusText = dto.Approved ? "kinnitatud" : "tagasi lükatud";
                 _logger.LogInformation("Vacation request {Id} was {Status} by admin {AdminId}", id, statusText, adminUserId);
 
-                // Reload with includes
                 vacationRequest = await _context.VacationRequests
                     .Include(vr => vr.User)
                     .Include(vr => vr.LeaveType)
@@ -694,7 +656,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // DELETE: api/VacationRequests/admin/5
         [HttpDelete("admin/{id}")]
         public async Task<IActionResult> DeleteVacationRequestAdmin(int id)
         {
@@ -708,9 +669,7 @@ namespace VacationRequestApi.Controllers
             return await DeleteVacationRequest(id);
         }
 
-        // ATTACHMENT ENDPOINTS
 
-        // POST: api/VacationRequests/5/attachments
         [HttpPost("{id}/attachments")]
         public async Task<ActionResult<AttachmentDto>> UploadAttachment(int id, IFormFile file)
         {
@@ -725,13 +684,11 @@ namespace VacationRequestApi.Controllers
                     return NotFound(new { message = "Taotlust ei leitud." });
                 }
 
-                // Check permissions
                 if (!isAdmin && vacationRequest.UserId != userId)
                 {
                     return Forbid();
                 }
 
-                // Validate file
                 if (!_fileStorageService.IsValidFileType(file.ContentType))
                 {
                     return BadRequest(new { message = "Failitüüp ei ole lubatud." });
@@ -742,10 +699,8 @@ namespace VacationRequestApi.Controllers
                     return BadRequest(new { message = "Fail on liiga suur." });
                 }
 
-                // Save file
                 var filePath = await _fileStorageService.SaveFileAsync(file, id);
 
-                // Create attachment record
                 var attachment = new VacationRequestAttachment
                 {
                     VacationRequestId = id,
@@ -760,7 +715,6 @@ namespace VacationRequestApi.Controllers
                 _context.VacationRequestAttachments.Add(attachment);
                 await _context.SaveChangesAsync();
 
-                // Audit log
                 await _auditService.LogActionAsync(
                     id,
                     userId,
@@ -793,7 +747,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // GET: api/VacationRequests/5/attachments/3
         [HttpGet("{id}/attachments/{attachmentId}")]
         public async Task<IActionResult> GetAttachment(int id, int attachmentId)
         {
@@ -811,7 +764,6 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Check permissions
                 if (!isAdmin && attachment.VacationRequest.UserId != userId)
                 {
                     return Forbid();
@@ -828,7 +780,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // DELETE: api/VacationRequests/5/attachments/3
         [HttpDelete("{id}/attachments/{attachmentId}")]
         public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
         {
@@ -846,20 +797,16 @@ namespace VacationRequestApi.Controllers
                     return NotFound();
                 }
 
-                // Check permissions
                 if (!isAdmin && attachment.VacationRequest.UserId != userId)
                 {
                     return Forbid();
                 }
 
-                // Delete physical file
                 await _fileStorageService.DeleteFileAsync(attachment.FilePath);
 
-                // Delete record
                 _context.VacationRequestAttachments.Remove(attachment);
                 await _context.SaveChangesAsync();
 
-                // Audit log
                 await _auditService.LogActionAsync(
                     id,
                     userId,
@@ -882,9 +829,7 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // STATISTICS AND EXPORT (keeping existing + enhanced)
 
-        // GET: api/VacationRequests/statistics
         [HttpGet("statistics")]
         public async Task<ActionResult<VacationStatisticsDto>> GetStatistics()
         {
@@ -986,7 +931,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // GET: api/VacationRequests/export/csv
         [HttpGet("export/csv")]
         public async Task<IActionResult> ExportToCsv()
         {
@@ -1032,7 +976,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // GET: api/VacationRequests/export/ical
         [HttpGet("export/ical")]
         public async Task<IActionResult> ExportToICal()
         {
@@ -1045,39 +988,9 @@ namespace VacationRequestApi.Controllers
                     .OrderBy(vr => vr.StartDate)
                     .ToListAsync();
 
-                var ical = new StringBuilder();
-                ical.AppendLine("BEGIN:VCALENDAR");
-                ical.AppendLine("VERSION:2.0");
-                ical.AppendLine("PRODID:-//Puhkusetaotluste süsteem//ET");
-                ical.AppendLine("CALSCALE:GREGORIAN");
-                ical.AppendLine("METHOD:PUBLISH");
-
-                foreach (var request in requests)
-                {
-                    var uid = $"{request.Id}@vacationrequests.example.com";
-                    var summary = $"Puhkus - {request.LeaveType?.Name ?? ""}";
-                    var description = !string.IsNullOrWhiteSpace(request.Comment)
-                        ? request.Comment.Replace("\n", "\\n")
-                        : "Puhkus";
-
-                    ical.AppendLine("BEGIN:VEVENT");
-                    ical.AppendLine($"UID:{uid}");
-                    ical.AppendLine($"DTSTAMP:{DateTime.UtcNow:yyyyMMdd}T{DateTime.UtcNow:HHmmss}Z");
-                    ical.AppendLine($"DTSTART;VALUE=DATE:{request.StartDate:yyyyMMdd}");
-                    ical.AppendLine($"DTEND;VALUE=DATE:{request.EndDate.AddDays(1):yyyyMMdd}");
-                    ical.AppendLine($"SUMMARY:{summary}");
-                    ical.AppendLine($"DESCRIPTION:{description}");
-                    ical.AppendLine("STATUS:CONFIRMED");
-                    ical.AppendLine("END:VEVENT");
-                }
-
-                ical.AppendLine("END:VCALENDAR");
-
                 var fileName = $"puhkused_{DateTime.Now:yyyyMMdd}.ics";
-                var bytes = Encoding.UTF8.GetBytes(ical.ToString());
-
+                var bytes = Encoding.UTF8.GetBytes(BuildVCalendar(requests, "Export"));
                 _logger.LogInformation("Exported {Count} requests to iCal for user {UserId}", requests.Count, userId);
-
                 return File(bytes, "text/calendar", fileName);
             }
             catch (Exception ex)
@@ -1087,7 +1000,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // POST: api/VacationRequests/admin/bulk-approve
         [HttpPost("admin/bulk-approve")]
         public async Task<ActionResult<BulkApproveResultDto>> BulkApprove([FromBody] List<BulkApproveItemDto> items)
         {
@@ -1149,7 +1061,6 @@ namespace VacationRequestApi.Controllers
             return Ok(result);
         }
 
-        // GET: api/VacationRequests/ical/user/{userId} — live iCal subscription feed
         [HttpGet("ical/user/{userId}")]
         public async Task<IActionResult> GetICalFeed(int userId)
         {
@@ -1164,35 +1075,8 @@ namespace VacationRequestApi.Controllers
                     .OrderBy(vr => vr.StartDate)
                     .ToListAsync();
 
-                var ical = new System.Text.StringBuilder();
-                ical.AppendLine("BEGIN:VCALENDAR");
-                ical.AppendLine("VERSION:2.0");
-                ical.AppendLine($"PRODID:-//Puhkusetaotluste süsteem//{user.FullName}//ET");
-                ical.AppendLine("CALSCALE:GREGORIAN");
-                ical.AppendLine("METHOD:PUBLISH");
-                ical.AppendLine($"X-WR-CALNAME:{user.FullName} puhkused");
-                ical.AppendLine("X-WR-TIMEZONE:Europe/Tallinn");
-                ical.AppendLine("REFRESH-INTERVAL;VALUE=DURATION:PT1H");
-
-                foreach (var req in requests)
-                {
-                    ical.AppendLine("BEGIN:VEVENT");
-                    ical.AppendLine($"UID:vacation-{req.Id}@vacationapp.local");
-                    ical.AppendLine($"DTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}");
-                    ical.AppendLine($"DTSTART;VALUE=DATE:{req.StartDate:yyyyMMdd}");
-                    ical.AppendLine($"DTEND;VALUE=DATE:{req.EndDate.AddDays(1):yyyyMMdd}");
-                    ical.AppendLine($"SUMMARY:{req.LeaveType?.Name ?? "Puhkus"}");
-                    if (!string.IsNullOrWhiteSpace(req.Comment))
-                        ical.AppendLine($"DESCRIPTION:{req.Comment.Replace("\n", "\\n")}");
-                    ical.AppendLine("STATUS:CONFIRMED");
-                    ical.AppendLine("TRANSP:OPAQUE");
-                    ical.AppendLine("END:VEVENT");
-                }
-
-                ical.AppendLine("END:VCALENDAR");
-
                 Response.Headers["Content-Disposition"] = $"attachment; filename=\"puhkused-{userId}.ics\"";
-                return Content(ical.ToString(), "text/calendar; charset=utf-8");
+                return Content(BuildVCalendar(requests, user.FullName, $"{user.FullName} puhkused"), "text/calendar; charset=utf-8");
             }
             catch (Exception ex)
             {
@@ -1201,7 +1085,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // GET: api/VacationRequests/{id}/comments
         [HttpGet("{id}/comments")]
         public async Task<ActionResult<IEnumerable<RequestCommentDto>>> GetComments(int id)
         {
@@ -1238,7 +1121,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // POST: api/VacationRequests/{id}/comments
         [HttpPost("{id}/comments")]
         public async Task<ActionResult<RequestCommentDto>> PostComment(int id, [FromBody] CreateCommentDto dto)
         {
@@ -1286,7 +1168,6 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        // HELPER METHODS
 
         private VacationRequestResponseDto MapToResponseDto(VacationRequest request, int currentUserId, bool isAdmin)
         {
@@ -1424,14 +1305,44 @@ namespace VacationRequestApi.Controllers
             return (rangeEnd - rangeStart).Days + 1;
         }
 
-        private string? GetIpAddress()
+        private string? GetIpAddress() => HttpContext.Connection.RemoteIpAddress?.ToString();
+        private string? GetUserAgent() => HttpContext.Request.Headers["User-Agent"].ToString();
+
+        private static string BuildVEvent(VacationRequest req, string uid)
         {
-            return HttpContext.Connection.RemoteIpAddress?.ToString();
+            var sb = new StringBuilder();
+            sb.AppendLine("BEGIN:VEVENT");
+            sb.AppendLine($"UID:{uid}");
+            sb.AppendLine($"DTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}");
+            sb.AppendLine($"DTSTART;VALUE=DATE:{req.StartDate:yyyyMMdd}");
+            sb.AppendLine($"DTEND;VALUE=DATE:{req.EndDate.AddDays(1):yyyyMMdd}");
+            sb.AppendLine($"SUMMARY:{req.LeaveType?.Name ?? "Puhkus"}");
+            if (!string.IsNullOrWhiteSpace(req.Comment))
+                sb.AppendLine($"DESCRIPTION:{req.Comment.Replace("\n", "\\n")}");
+            sb.AppendLine("STATUS:CONFIRMED");
+            sb.AppendLine("TRANSP:OPAQUE");
+            sb.AppendLine("END:VEVENT");
+            return sb.ToString();
         }
 
-        private string? GetUserAgent()
+        private static string BuildVCalendar(IEnumerable<VacationRequest> requests, string prodId, string? calName = null)
         {
-            return HttpContext.Request.Headers["User-Agent"].ToString();
+            var ical = new StringBuilder();
+            ical.AppendLine("BEGIN:VCALENDAR");
+            ical.AppendLine("VERSION:2.0");
+            ical.AppendLine($"PRODID:-//Puhkusetaotluste süsteem//{prodId}//ET");
+            ical.AppendLine("CALSCALE:GREGORIAN");
+            ical.AppendLine("METHOD:PUBLISH");
+            if (calName != null)
+            {
+                ical.AppendLine($"X-WR-CALNAME:{calName}");
+                ical.AppendLine("X-WR-TIMEZONE:Europe/Tallinn");
+                ical.AppendLine("REFRESH-INTERVAL;VALUE=DURATION:PT1H");
+            }
+            foreach (var req in requests)
+                ical.Append(BuildVEvent(req, $"vacation-{req.Id}@vacationapp.local"));
+            ical.AppendLine("END:VCALENDAR");
+            return ical.ToString();
         }
     }
 }

@@ -1,31 +1,25 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { getEstonianPublicHolidays, isWeekend } from '../../utils/dateUtils';
+import { getEstonianPublicHolidays, isWeekend, toISOStr } from '../../utils/dateUtils';
+import { MONTHS_FULL, WEEKDAYS_SHORT } from '../../utils/locale';
 import './DatePicker.css';
 
-const MONTHS = [
-  'Jaanuar','Veebruar','Märts','Aprill','Mai','Juuni',
-  'Juuli','August','September','Oktoober','November','Detsember',
-];
-const DAYS = ['E','T','K','N','R','L','P']; // Monday-first
-
 const parse = (str) => (str ? new Date(str + 'T00:00:00') : null);
-const toStr = (d) => d ? d.toISOString().split('T')[0] : '';
 
 const DatePicker = ({
-  value = '',          // 'YYYY-MM-DD'
-  onChange,            // (str) => void
-  minDate = '',        // 'YYYY-MM-DD'
+  value = '',
+  onChange,
+  minDate = '',
   maxDate = '',
   placeholder = 'Vali kuupäev',
   disabled = false,
   error = false,
-  blackouts = [],      // [{startDate,endDate}]
-  rangeStart = '',     // other date for range highlight
+  blackouts = [],
+  rangeStart = '',
   rangeEnd = '',
   id,
 }) => {
   const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
-  const todayStr = toStr(today);
+  const todayStr = toISOStr(today);
 
   const [open, setOpen] = useState(false);
   const selectedDate = parse(value);
@@ -59,9 +53,9 @@ const DatePicker = ({
       ...getEstonianPublicHolidays(viewYear),
       ...getEstonianPublicHolidays(viewYear + 1),
     ];
-    const set  = new Set(all.map(h => toStr(h.date)));
+    const set  = new Set(all.map(h => toISOStr(h.date)));
     const names = {};
-    all.forEach(h => { names[toStr(h.date)] = h.name; });
+    all.forEach(h => { names[toISOStr(h.date)] = h.name; });
     return { holidaySet: set, holidayNames: names };
   }, [viewYear]);
 
@@ -113,7 +107,7 @@ const DatePicker = ({
 
   // Build per-cell class list
   const cellInfo = (date, cur) => {
-    const str = toStr(date);
+    const str = toISOStr(date);
     const isSelected  = str === value;
     const isToday     = str === todayStr;
     const isHol       = holidaySet.has(str);
@@ -192,7 +186,7 @@ const DatePicker = ({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
             <button type="button" className="dp-month-year" onClick={goToToday}>
-              {MONTHS[viewMonth]} {viewYear}
+              {MONTHS_FULL[viewMonth]} {viewYear}
             </button>
             <button type="button" className="dp-nav-btn" onClick={nextMonth} title="Järgmine kuu">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
@@ -201,7 +195,7 @@ const DatePicker = ({
 
           {/* Day-of-week labels */}
           <div className="dp-dow-row">
-            {DAYS.map(d => <div key={d} className="dp-dow">{d}</div>)}
+            {WEEKDAYS_SHORT.map(d => <div key={d} className="dp-dow">{d}</div>)}
           </div>
 
           {/* Day grid */}

@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getEstonianPublicHolidays, isWeekend, countWorkingDays } from '../../utils/dateUtils';
+import {
+  getEstonianPublicHolidays,
+  toISOStr, addWorkingDays, nextMonday,
+} from '../../utils/dateUtils';
 import { calendarApi } from '../../api/api';
 import './DateSuggester.css';
 
 const DateSuggester = ({ remainingDays, blackouts = [], department, onSelect }) => {
-  const [open, setOpen]             = useState(false);
+  const [open, setOpen]               = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [computing, setComputing]   = useState(false);
-  const [teamAbsences, setTeamAbsences] = useState([]); // [{startDate,endDate,userName}]
+  const [computing, setComputing]     = useState(false);
+  const [teamAbsences, setTeamAbsences] = useState([]);
 
   const loadTeamData = useCallback(async () => {
     try {
@@ -15,11 +18,10 @@ const DateSuggester = ({ remainingDays, blackouts = [], department, onSelect }) 
       const end   = new Date(today);
       end.setMonth(end.getMonth() + 7);
       const res = await calendarApi.getTeamCalendar(
-        today.toISOString().split('T')[0],
-        end.toISOString().split('T')[0],
+        toISOStr(today),
+        toISOStr(end),
         department || undefined
       );
-      // events are [{start,end,userName,status}]
       const approved = (res.data?.events || []).filter(e => e.status === 'Approved');
       setTeamAbsences(approved);
     } catch {
@@ -34,30 +36,6 @@ const DateSuggester = ({ remainingDays, blackouts = [], department, onSelect }) 
   useEffect(() => {
     if (open && remainingDays > 0) compute();
   }, [open, remainingDays, teamAbsences, blackouts]); // eslint-disable-line
-
-  const nextMonday = () => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    const dow = d.getDay();
-    const skip = dow === 0 ? 1 : dow === 1 ? 7 : 8 - dow;
-    d.setDate(d.getDate() + skip);
-    return d;
-  };
-
-  const addWorkingDays = (start, needed) => {
-    const allHols = new Set([
-      ...getEstonianPublicHolidays(start.getFullYear()),
-      ...getEstonianPublicHolidays(start.getFullYear() + 1),
-    ].map(h => h.date.toISOString().split('T')[0]));
-    let count = 0;
-    const cur = new Date(start);
-    while (count < needed) {
-      const key = cur.toISOString().split('T')[0];
-      if (!isWeekend(cur) && !allHols.has(key)) count++;
-      if (count < needed) cur.setDate(cur.getDate() + 1);
-    }
-    return new Date(cur);
-  };
 
   const calDaysBetween = (s, e) => Math.round((e - s) / 86400000) + 1;
 
@@ -86,9 +64,9 @@ const DateSuggester = ({ remainingDays, blackouts = [], department, onSelect }) 
     const hols1 = getEstonianPublicHolidays(new Date().getFullYear());
     const hols2 = getEstonianPublicHolidays(new Date().getFullYear() + 1);
     const allHols = [...hols1, ...hols2];
-    const holSet  = new Set(allHols.map(h => h.date.toISOString().split('T')[0]));
+    const holSet  = new Set(allHols.map(h => toISOStr(h.date)));
     const holNameMap = {};
-    allHols.forEach(h => { holNameMap[h.date.toISOString().split('T')[0]] = h.name; });
+    allHols.forEach(h => { holNameMap[toISOStr(h.date)] = h.name; });
 
     const targetLengths = [3, 5, 7, 10, 14].filter(l => l <= remainingDays);
     if (!targetLengths.length && remainingDays > 0) targetLengths.push(remainingDays);
@@ -117,7 +95,7 @@ const DateSuggester = ({ remainingDays, blackouts = [], department, onSelect }) 
           const hols = [];
           const cur = new Date(ws);
           while (cur <= we) {
-            const k = cur.toISOString().split('T')[0];
+            const k = toISOStr(cur);
             if (holSet.has(k)) hols.push(holNameMap[k]);
             cur.setDate(cur.getDate() + 1);
           }
@@ -130,8 +108,8 @@ const DateSuggester = ({ remainingDays, blackouts = [], department, onSelect }) 
           const score = (extraDays / wDays) * 100 - conflictPct * 40;
 
           results.push({
-            startDate: ws.toISOString().split('T')[0],
-            endDate:   we.toISOString().split('T')[0],
+            startDate: toISOStr(ws),
+            endDate:   toISOStr(we),
             workingDays: wDays,
             calendarDays: calDays,
             extraDays,

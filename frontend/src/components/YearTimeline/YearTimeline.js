@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { vacationRequestsApi } from '../../api/api';
-import { getEstonianPublicHolidays, isWeekend } from '../../utils/dateUtils';
+import { getEstonianPublicHolidays, isWeekend, toISOStr } from '../../utils/dateUtils';
+import { MONTHS_SHORT, MONTHS_FULL } from '../../utils/locale';
 import './YearTimeline.css';
-
-const MONTHS = ['Jaan','Veebr','Märts','Apr','Mai','Juuni','Juuli','Aug','Sept','Okt','Nov','Dets'];
-const MONTHS_FULL = ['Jaanuar','Veebruar','Märts','Aprill','Mai','Juuni','Juuli','August','September','Oktoober','November','Detsember'];
 
 function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
 }
 
-function isoDate(y, m, d) {
+function ymdStr(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
@@ -30,15 +28,15 @@ const YearTimeline = () => {
         startDateTo:   `${year}-12-31`,
       });
       setRequests(r.data);
-    } catch (e) { console.error(e); }
-    finally     { setLoading(false); }
+    } catch { /* requests unavailable */ }
+    finally { setLoading(false); }
   };
 
   const { holidaySet, holidayNames } = useMemo(() => {
     const all = [...getEstonianPublicHolidays(year - 1), ...getEstonianPublicHolidays(year), ...getEstonianPublicHolidays(year + 1)];
-    const set   = new Set(all.map(h => h.date.toISOString().split('T')[0]));
+    const set   = new Set(all.map(h => toISOStr(h.date)));
     const names = {};
-    all.forEach(h => { names[h.date.toISOString().split('T')[0]] = h.name; });
+    all.forEach(h => { names[toISOStr(h.date)] = h.name; });
     return { holidaySet: set, holidayNames: names };
   }, [year]);
 
@@ -49,7 +47,7 @@ const YearTimeline = () => {
       const cur = new Date(r.startDate);
       const end = new Date(r.endDate);
       while (cur <= end) {
-        const key = cur.toISOString().split('T')[0];
+        const key = toISOStr(cur);
         map[key] = { status: r.status, leaveTypeName: r.leaveTypeName, color: r.leaveTypeColor || '#0071E3' };
         cur.setDate(cur.getDate() + 1);
       }
@@ -57,7 +55,7 @@ const YearTimeline = () => {
     return map;
   }, [requests]);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = toISOStr(new Date());
 
   const statusLabel = (s) => s === 'Approved' ? 'Kinnitatud' : s === 'Pending' ? 'Ootel' : s;
 
@@ -140,11 +138,11 @@ const YearTimeline = () => {
             const daysInMonth = getDaysInMonth(year, monthIdx);
             return (
               <div key={monthIdx} className="yt-month">
-                <div className="yt-month-name">{MONTHS[monthIdx]}</div>
+                <div className="yt-month-name">{MONTHS_SHORT[monthIdx]}</div>
                 <div className="yt-days">
                   {Array.from({ length: daysInMonth }, (_, dayIdx) => {
                     const d = dayIdx + 1;
-                    const dateStr = isoDate(year, monthIdx, d);
+                    const dateStr = ymdStr(year, monthIdx, d);
                     const isHoliday = holidaySet.has(dateStr);
                     const isWknd    = isWeekend(new Date(dateStr));
                     const isToday   = dateStr === today;

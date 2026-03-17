@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { vacationRequestsApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
+import { downloadBlob } from '../../utils/fileUtils';
+import { MONTHS_SHORT } from '../../utils/locale';
 import './Statistics.css';
-
-const MONTHS_SHORT = ['Jaan','Veebr','Märts','Apr','Mai','Juuni',
-                      'Juuli','Aug','Sept','Okt','Nov','Dets'];
 
 const Statistics = () => {
   const [statistics, setStatistics] = useState(null);
@@ -31,11 +30,7 @@ const Statistics = () => {
   const handleExportCSV = async () => {
     try {
       const r = await vacationRequestsApi.exportCsv();
-      const url = window.URL.createObjectURL(new Blob([r.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `puhkusetaotlused_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
+      downloadBlob(r.data, `puhkusetaotlused_${new Date().toISOString().split('T')[0]}.csv`);
       toast.success('CSV alla laaditud');
     } catch { toast.error('Viga CSV eksportimisel'); }
   };
@@ -43,11 +38,7 @@ const Statistics = () => {
   const handleExportICal = async () => {
     try {
       const r = await vacationRequestsApi.exportIcal();
-      const url = window.URL.createObjectURL(new Blob([r.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `puhkused_${new Date().toISOString().split('T')[0]}.ics`;
-      document.body.appendChild(a); a.click(); a.remove();
+      downloadBlob(r.data, `puhkused_${new Date().toISOString().split('T')[0]}.ics`);
       toast.success('Kalendrifail alla laaditud');
     } catch { toast.error('Viga kalendri eksportimisel'); }
   };
