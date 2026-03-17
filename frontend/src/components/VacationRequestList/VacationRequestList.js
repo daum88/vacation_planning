@@ -3,6 +3,7 @@ import { formatDate } from '../../utils/dateUtils';
 import { vacationRequestsApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
 import CommentThread from '../CommentThread/CommentThread';
+import CustomSelect from '../CustomSelect/CustomSelect';
 import './VacationRequestList.css';
 
 const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }) => {
@@ -143,27 +144,47 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, loading }
         <input
           type="text"
           className="filter-search"
-          placeholder="Otsi kommentaari, tüüpi..."
+          placeholder="Otsi kommentaari, tüüpi, asendajat..."
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
         />
-        <select className="filter-select" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
-          <option value="">Kõik aastad</option>
-          {years.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-        <select className="filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">Kõik staatused</option>
-          <option value="Pending">Ootel</option>
-          <option value="Approved">Kinnitatud</option>
-          <option value="Rejected">Tagasi lükatud</option>
-          <option value="Withdrawn">Tagasi võetud</option>
-        </select>
-        <select className="filter-select" value={filterLeaveType} onChange={e => setFilterLeaveType(e.target.value)}>
-          <option value="">Kõik tüübid</option>
-          {leaveTypes.map(([name]) => <option key={name} value={name}>{name}</option>)}
-        </select>
+        <CustomSelect
+          className="filter-custom-select"
+          options={[
+            { value: '', label: 'Kõik aastad' },
+            ...years.map(y => ({ value: String(y), label: String(y) }))
+          ]}
+          value={filterYear}
+          onChange={setFilterYear}
+          placeholder="Kõik aastad"
+        />
+        <CustomSelect
+          className="filter-custom-select"
+          options={[
+            { value: '', label: 'Kõik staatused' },
+            { value: 'Pending',   label: 'Ootel' },
+            { value: 'Approved',  label: 'Kinnitatud' },
+            { value: 'Rejected',  label: 'Tagasi lükatud' },
+            { value: 'Withdrawn', label: 'Tagasi võetud' },
+          ]}
+          value={filterStatus}
+          onChange={setFilterStatus}
+          placeholder="Kõik staatused"
+        />
+        <CustomSelect
+          className="filter-custom-select"
+          options={[
+            { value: '', label: 'Kõik tüübid' },
+            ...leaveTypes.map(([name, color]) => ({ value: name, label: name, color }))
+          ]}
+          value={filterLeaveType}
+          onChange={setFilterLeaveType}
+          placeholder="Kõik tüübid"
+        />
         {(filterYear || filterStatus || filterLeaveType || searchText) && (
-          <button className="filter-clear" onClick={() => { setFilterYear(''); setFilterStatus(''); setFilterLeaveType(''); setSearchText(''); }}>
+          <button className="filter-clear" onClick={() => {
+            setFilterYear(''); setFilterStatus(''); setFilterLeaveType(''); setSearchText('');
+          }}>
             Tühista filtrid
           </button>
         )}

@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { vacationRequestsApi, leaveTypesApi, usersApi, calendarApi, blackoutPeriodsApi, departmentCapacityApi } from '../../api/api';
+import {
+  vacationRequestsApi, leaveTypesApi, usersApi,
+  calendarApi, blackoutPeriodsApi, departmentCapacityApi
+} from '../../api/api';
 import { useToast } from '../Toast/Toast';
 import { countWorkingDays, countCalendarDays, getHolidaysInRange } from '../../utils/dateUtils';
 import DateSuggester from '../DateSuggester/DateSuggester';
+import DatePicker from '../DatePicker/DatePicker';
+import CustomSelect from '../CustomSelect/CustomSelect';
+import EmployeeComboBox from '../EmployeeComboBox/EmployeeComboBox';
 import './VacationRequestForm.css';
 
 const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
@@ -13,20 +19,23 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     comment: '',
     substituteName: '',
   });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [leaveTypes, setLeaveTypes] = useState([]);
-  const [userBalance, setUserBalance] = useState(null);
+  const [errors, setErrors]               = useState({});
+  const [loading, setLoading]             = useState(false);
+  const [leaveTypes, setLeaveTypes]       = useState([]);
+  const [userBalance, setUserBalance]     = useState(null);
   const [userDepartment, setUserDepartment] = useState('');
-  const [conflicts, setConflicts] = useState(null);
-  const [blackouts, setBlackouts] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(1);
+  const [conflicts, setConflicts]         = useState(null);
+  const [blackouts, setBlackouts]         = useState([]);
   const [capacityWarning, setCapacityWarning] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const toast = useToast();
 
   useEffect(() => {
+    const uid = parseInt(localStorage.getItem('userId') || '1');
+    setCurrentUserId(uid);
     fetchLeaveTypes();
-    fetchUserBalance();
+    fetchUserBalance(uid);
     fetchBlackouts();
   }, []);
 
@@ -34,9 +43,9 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     if (editRequest) {
       setFormData({
         leaveTypeId: editRequest.leaveTypeId || 1,
-        startDate: formatDateForInput(editRequest.startDate),
-        endDate: formatDateForInput(editRequest.endDate),
-        comment: editRequest.comment || '',
+        startDate: formatDateStr(editRequest.startDate),
+        endDate:   formatDateStr(editRequest.endDate),
+        comment:   editRequest.comment || '',
         substituteName: editRequest.substituteName || '',
       });
     } else {
@@ -47,191 +56,138 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
       checkConflicts();
-      checkCapacity();
+      if (userDepartment) checkCapacity();
+    } else {
+      setConflicts(null);
+      setCapacityWarning(null);
     }
-  }, [formData.startDate, formData.endDate]);
+  }, [formData.startDate, formData.endDate, userDepartment]); // eslint-disable-line
 
   const fetchLeaveTypes = async () => {
     try {
-      const response = await leaveTypesApi.getAll();
-      setLeaveTypes(response.data);
-    } catch (err) {
-      console.error('Error fetching leave types:', err);
-    }
+      const r = await leaveTypesApi.getAll();
+      setLeaveTypes(r.data);
+    } catch (e) { console.error(e); }
   };
 
-  const fetchUserBalance = async () => {
+  const fetchUserBalance = async (uid) => {
     try {
-      const userId = localStorage.getItem('userId') || '1';
-      const [balanceRes, userRes] = await Promise.all([
-        usersApi.getBalance(userId),
-        usersApi.getById(userId),
+      const [balRes, userRes] = await Promise.all([
+        usersApi.getBalance(uid),
+        usersApi.getById(uid),
       ]);
-      setUserBalance(balanceRes.data);
+      setUserBalance(balRes.data);
       setUserDepartment(userRes.data.department || '');
-    } catch (err) {
-      console.error('Error fetching balance:', err);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const fetchBlackouts = async () => {
     try {
-      const response = await blackoutPeriodsApi.getAll();
-      setBlackouts(response.data);
-    } catch (err) {
-      console.error('Error fetching blackouts:', err);
-    }
+      const r = await blackoutPeriodsApi.getAll();
+      setBlackouts(r.data);
+    } catch (e) { console.error(e); }
   };
 
   const checkConflicts = async () => {
     try {
-      const response = await calendarApi.checkConflicts(
-        formData.startDate,
-        formData.endDate,
-        editRequest?.id
-      );
-      setConflicts(response.data);
-    } catch (err) {
-      console.error('Error checking conflicts:', err);
-    }
+      const r = await calendarApi.checkConflicts(formData.startDate, formData.endDate, editRequest?.id);
+      setConflicts(r.data);
+    } catch (e) { console.error(e); }
   };
 
   const checkCapacity = async () => {
-    if (!userDepartment) return;
     try {
-      const userId = parseInt(localStorage.getItem('userId') || '1');
-      const res = await departmentCapacityApi.check(
-        userDepartment,
-        formData.startDate,
-        formData.endDate,
-        userId
-      );
-      if (res.data.hasLimit && res.data.wouldExceed) {
-        setCapacityWarning(res.data);
-      } else {
-        setCapacityWarning(null);
-      }
-    } catch {
-      setCapacityWarning(null);
-    }
+      const r = await departmentCapacityApi.check(userDepartment, formData.startDate, formData.endDate, currentUserId);
+      setCapacityWarning(r.data.hasLimit && r.data.wouldExceed ? r.data : null);
+    } catch { setCapacityWarning(null); }
   };
 
-  const formatDateForInput = (dateString) => {
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
-  };
+  const formatDateStr = (s) => s ? new Date(s).toISOString().split('T')[0] : '';
 
   const getActiveBlackouts = () => {
     if (!formData.startDate || !formData.endDate) return [];
-    const start = new Date(formData.startDate);
-    const end = new Date(formData.endDate);
-    return blackouts.filter(b => {
-      const bs = new Date(b.startDate);
-      const be = new Date(b.endDate);
-      return bs <= end && be >= start;
-    });
+    return blackouts.filter(b =>
+      new Date(b.startDate) <= new Date(formData.endDate) &&
+      new Date(b.endDate)   >= new Date(formData.startDate)
+    );
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const next = {};
     const today = new Date().toISOString().split('T')[0];
 
-    if (!formData.startDate) {
-      newErrors.startDate = 'Alguskuupäev on kohustuslik';
-    } else if (!editRequest && formData.startDate < today) {
-      newErrors.startDate = 'Alguskuupäev ei saa olla minevikus';
-    }
+    if (!formData.startDate) { next.startDate = 'Alguskuupäev on kohustuslik'; }
+    else if (!editRequest && formData.startDate < today) { next.startDate = 'Alguskuupäev ei saa olla minevikus'; }
 
-    if (!formData.endDate) {
-      newErrors.endDate = 'Lõppkuupäev on kohustuslik';
-    }
+    if (!formData.endDate) { next.endDate = 'Lõppkuupäev on kohustuslik'; }
 
     if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
-      newErrors.endDate = 'Lõppkuupäev ei saa olla enne alguskuupäeva';
+      next.endDate = 'Lõppkuupäev ei saa olla enne alguskuupäeva';
     }
 
-    const calDays = countCalendarDays(formData.startDate, formData.endDate);
-    if (calDays > 90) {
-      newErrors.general = 'Puhkus ei saa olla pikem kui 90 päeva';
-    }
+    const cal = countCalendarDays(formData.startDate, formData.endDate);
+    if (cal > 90) next.general = 'Puhkus ei saa olla pikem kui 90 kalendripäeva';
 
     const wDays = countWorkingDays(formData.startDate, formData.endDate);
-    const selectedLeaveType = leaveTypes.find(lt => lt.id === parseInt(formData.leaveTypeId));
-    if (selectedLeaveType?.isPaid && userBalance && wDays > userBalance.remainingLeaveDays) {
-      newErrors.general = `Pole piisavalt puhkusepäevi. Jääk: ${userBalance.remainingLeaveDays} tööpäeva.`;
+    const lt = leaveTypes.find(l => l.id === parseInt(formData.leaveTypeId));
+    if (lt?.isPaid && userBalance && wDays > userBalance.remainingLeaveDays) {
+      next.general = `Pole piisavalt puhkusepäevi. Jääk: ${userBalance.remainingLeaveDays} tööpäeva.`;
     }
 
-    if (selectedLeaveType?.requiresAttachment && selectedFiles.length === 0 && !editRequest) {
-      newErrors.files = 'See puhkuse tüüp nõuab manuse lisamist';
+    if (lt?.requiresAttachment && selectedFiles.length === 0 && !editRequest) {
+      next.files = 'See puhkuse tüüp nõuab manuse lisamist';
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const setField = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => {
-      const next = { ...prev };
-      delete next[name];
-      delete next.general;
-      return next;
-    });
+    setErrors(prev => { const n = { ...prev }; delete n[name]; delete n.general; return n; });
   };
 
   const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
     const maxSize = 10 * 1024 * 1024;
-    const allowedTypes = [
-      'application/pdf', 'image/jpeg', 'image/png', 'image/gif',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-    const validFiles = files.filter(file => {
-      if (file.size > maxSize) { toast.error(`${file.name} on liiga suur (max 10MB)`); return false; }
-      if (!allowedTypes.includes(file.type)) { toast.error(`${file.name} failitüüp pole lubatud`); return false; }
-      return true;
+    const allowed = ['application/pdf','image/jpeg','image/png','image/gif',
+      'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    Array.from(e.target.files).forEach(f => {
+      if (f.size > maxSize) { toast.error(`${f.name}: liiga suur (max 10MB)`); return; }
+      if (!allowed.includes(f.type)) { toast.error(`${f.name}: failitüüp pole lubatud`); return; }
+      setSelectedFiles(prev => [...prev, f]);
     });
-    setSelectedFiles(prev => [...prev, ...validFiles]);
-    setErrors(prev => { const next = { ...prev }; delete next.files; return next; });
+    setErrors(prev => { const n = { ...prev }; delete n.files; return n; });
   };
 
-  const removeFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeFile = (i) => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) { toast.error('Palun paranda vormis olevad vead'); return; }
     setLoading(true);
     try {
-      let requestId;
+      let reqId;
       if (editRequest) {
         await vacationRequestsApi.update(editRequest.id, formData);
-        requestId = editRequest.id;
+        reqId = editRequest.id;
         toast.success('Taotlus edukalt uuendatud');
       } else {
-        const response = await vacationRequestsApi.create(formData);
-        requestId = response.data.id;
+        const r = await vacationRequestsApi.create(formData);
+        reqId = r.data.id;
         toast.success('Taotlus edukalt esitatud');
       }
-      if (selectedFiles.length > 0) {
-        for (const file of selectedFiles) {
-          try { await vacationRequestsApi.uploadAttachment(requestId, file); }
-          catch (err) { toast.warning(`Viga faili ${file.name} üleslaadimisel`); }
-        }
+      for (const f of selectedFiles) {
+        try { await vacationRequestsApi.uploadAttachment(reqId, f); }
+        catch { toast.warning(`Viga faili ${f.name} üleslaadimisel`); }
       }
       resetForm();
-      fetchUserBalance();
+      fetchUserBalance(currentUserId);
       onSuccess();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Viga taotluse esitamisel';
-      toast.error(errorMessage);
-      setErrors({ general: errorMessage });
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Viga taotluse esitamisel';
+      toast.error(msg);
+      setErrors({ general: msg });
+    } finally { setLoading(false); }
   };
 
   const resetForm = () => {
@@ -239,17 +195,25 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
     setSelectedFiles([]);
     setErrors({});
     setConflicts(null);
+    setCapacityWarning(null);
   };
 
-  const handleCancelEdit = () => { resetForm(); onCancel(); };
-
-  const workingDays = countWorkingDays(formData.startDate, formData.endDate);
-  const calendarDays = countCalendarDays(formData.startDate, formData.endDate);
+  // Derived
+  const workingDays    = countWorkingDays(formData.startDate, formData.endDate);
+  const calendarDays   = countCalendarDays(formData.startDate, formData.endDate);
   const holidaysInRange = formData.startDate && formData.endDate
-    ? getHolidaysInRange(formData.startDate, formData.endDate)
-    : [];
-  const activeBlackouts = getActiveBlackouts();
+    ? getHolidaysInRange(formData.startDate, formData.endDate) : [];
+  const activeBlackouts  = getActiveBlackouts();
   const selectedLeaveType = leaveTypes.find(lt => lt.id === parseInt(formData.leaveTypeId));
+  const today = new Date().toISOString().split('T')[0];
+
+  // CustomSelect options for leave types
+  const leaveTypeOptions = leaveTypes.map(lt => ({
+    value: String(lt.id),
+    label: lt.name,
+    color: lt.color,
+    hint: !lt.isPaid ? 'tasustamata' : lt.requiresAttachment ? 'manus nõutud' : '',
+  }));
 
   return (
     <div className="vacation-request-form-container">
@@ -274,32 +238,29 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           </div>
         )}
 
+        {/* ── Puhkuse liik ─────────────────────── */}
         <section className="form-section">
           <div className="form-section-title">Puhkuse liik</div>
           <div className="form-group">
-            <label htmlFor="leaveTypeId" className="form-label">Puhkuse liik *</label>
-            <select
-              id="leaveTypeId" name="leaveTypeId"
-              value={formData.leaveTypeId} onChange={handleChange}
-              className={`form-select ${errors.leaveTypeId ? 'error' : ''}`}
+            <label className="form-label">Puhkuse liik *</label>
+            <CustomSelect
+              options={leaveTypeOptions}
+              value={String(formData.leaveTypeId)}
+              onChange={v => setField('leaveTypeId', parseInt(v))}
               disabled={loading}
-            >
-              {leaveTypes.map(type => (
-                <option key={type.id} value={type.id}>
-                  {type.name}{!type.isPaid ? ' (tasustamata)' : ''}{type.requiresAttachment ? ' (nõuab manust)' : ''}
-                </option>
-              ))}
-            </select>
+              error={!!errors.leaveTypeId}
+            />
             {selectedLeaveType && (
               <div className="leave-type-info" style={{ borderLeftColor: selectedLeaveType.color }}>
                 {selectedLeaveType.description}
                 {selectedLeaveType.requiresAttachment && <div className="info-badge">Manus nõutud</div>}
-                {!selectedLeaveType.requiresApproval && <div className="info-badge success">Automaatne kinnitamine</div>}
+                {!selectedLeaveType.requiresApproval  && <div className="info-badge success">Automaatne kinnitamine</div>}
               </div>
             )}
           </div>
         </section>
 
+        {/* ── Kuupäevad ────────────────────────── */}
         <section className="form-section">
           <div className="form-section-title">Kuupäevad</div>
 
@@ -307,6 +268,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             <DateSuggester
               remainingDays={userBalance.remainingLeaveDays}
               blackouts={blackouts}
+              department={userDepartment}
               onSelect={(start, end) => {
                 setFormData(prev => ({ ...prev, startDate: start, endDate: end }));
                 setErrors(prev => { const n = { ...prev }; delete n.startDate; delete n.endDate; return n; });
@@ -314,31 +276,43 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
             />
           )}
 
-          {/* Capacity warning */}
           {capacityWarning && (
             <div className="capacity-warning">
-              <strong>Osakonna limiit täis:</strong> {capacityWarning.department} osakonnal on juba {capacityWarning.currentCount}/{capacityWarning.maxConcurrent} inimest puhkusel sellel perioodil.
+              <strong>Osakonna limiit täis:</strong> {capacityWarning.department} osakonnal on juba {capacityWarning.currentCount}/{capacityWarning.maxConcurrent} töötajat puhkusel sellel perioodil.
               Vali teised kuupäevad või konsulteeri juhiga.
             </div>
           )}
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="startDate" className="form-label">Alguskuupäev *</label>
+              <label className="form-label">Alguskuupäev *</label>
               <span className="field-hint">Millal soovid puhkust alustada?</span>
-              <input type="date" id="startDate" name="startDate"
-                value={formData.startDate} onChange={handleChange}
-                className={`form-input ${errors.startDate ? 'error' : ''}`}
-                disabled={loading} required />
+              <DatePicker
+                value={formData.startDate}
+                onChange={v => setField('startDate', v)}
+                minDate={editRequest ? '' : today}
+                maxDate={formData.endDate || ''}
+                placeholder="Vali alguskuupäev"
+                disabled={loading}
+                error={!!errors.startDate}
+                blackouts={blackouts}
+                rangeEnd={formData.endDate}
+              />
               {errors.startDate && <span className="error-text">{errors.startDate}</span>}
             </div>
             <div className="form-group">
-              <label htmlFor="endDate" className="form-label">Lõppkuupäev *</label>
+              <label className="form-label">Lõppkuupäev *</label>
               <span className="field-hint">Mis kuupäevani puhkad?</span>
-              <input type="date" id="endDate" name="endDate"
-                value={formData.endDate} onChange={handleChange}
-                className={`form-input ${errors.endDate ? 'error' : ''}`}
-                disabled={loading} required />
+              <DatePicker
+                value={formData.endDate}
+                onChange={v => setField('endDate', v)}
+                minDate={formData.startDate || today}
+                placeholder="Vali lõppkuupäev"
+                disabled={loading}
+                error={!!errors.endDate}
+                blackouts={blackouts}
+                rangeStart={formData.startDate}
+              />
               {errors.endDate && <span className="error-text">{errors.endDate}</span>}
             </div>
           </div>
@@ -356,19 +330,18 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
               )}
               {selectedLeaveType?.isPaid && userBalance && (
                 <span className="days-remaining-preview">
-                  Pärast taotlust jääb: {Math.max(0, userBalance.remainingLeaveDays - workingDays)} tööpäeva
+                  Pärast taotlust jääb: <strong>{Math.max(0, userBalance.remainingLeaveDays - workingDays)}</strong> tööpäeva
                 </span>
               )}
             </div>
           )}
 
-          {conflicts && conflicts.hasConflicts && (
+          {conflicts?.hasConflicts && (
             <div className="conflicts-warning">
-              <strong>Meeskonna konfliktid:</strong>
-              <p>{conflicts.conflictCount} kolleegi on sellel perioodil puhkusel:</p>
+              <strong>Meeskonna konfliktid:</strong> {conflicts.conflictCount} kolleegi on sellel perioodil puhkusel.
               <ul>
-                {conflicts.conflicts.map((c, idx) => (
-                  <li key={idx}>
+                {conflicts.conflicts.map((c, i) => (
+                  <li key={i}>
                     {c.userName} ({c.department}) — {new Date(c.startDate).toLocaleDateString('et-EE')} kuni {new Date(c.endDate).toLocaleDateString('et-EE')}
                   </li>
                 ))}
@@ -377,57 +350,59 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           )}
         </section>
 
+        {/* ── Asendaja ─────────────────────────── */}
         <section className="form-section">
           <div className="form-section-title">Asendaja</div>
           <div className="form-group">
-            <label htmlFor="substituteName" className="form-label">Asendaja nimi</label>
-            <span className="field-hint">Kes katab sinu tööd äraoleku ajal?</span>
-            <input type="text" id="substituteName" name="substituteName"
-              value={formData.substituteName} onChange={handleChange}
-              className="form-input"
-              placeholder="Nimi või 'Pole asendajat'"
-              maxLength={200}
-              disabled={loading} />
+            <label className="form-label">Asendaja äraoleku ajal</label>
+            <span className="field-hint">Kes katab sinu tööülesanded puhkuse ajal?</span>
+            <EmployeeComboBox
+              value={formData.substituteName}
+              onChange={v => setField('substituteName', v)}
+              disabled={loading}
+              excludeUserId={currentUserId}
+            />
           </div>
         </section>
 
+        {/* ── Kommentaar ───────────────────────── */}
         <section className="form-section">
           <div className="form-section-title">Kommentaar</div>
           <div className="form-group">
-            <label htmlFor="comment" className="form-label">Lisa kommentaar (valikuline)</label>
-            <span className="field-hint">Lisa märkus juhile — näiteks eripäevade kohta.</span>
-            <textarea id="comment" name="comment"
-              value={formData.comment} onChange={handleChange}
+            <label className="form-label">Lisa kommentaar (valikuline)</label>
+            <span className="field-hint">Näiteks eripäevade kohta, kiiruse soov vms.</span>
+            <textarea
+              value={formData.comment}
+              onChange={e => setField('comment', e.target.value)}
               className="form-textarea" rows="3" maxLength="500"
               placeholder="Näiteks: Reisile minek 25. juunil, palun kinnita kiiresti."
-              disabled={loading} />
+              disabled={loading}
+            />
             <div className="char-count">{formData.comment.length}/500</div>
           </div>
         </section>
 
+        {/* ── Manused ──────────────────────────── */}
         {!editRequest && (
           <section className="form-section">
             <div className="form-section-title">Manused</div>
             <div className="form-group">
-              <label className="form-label">
-                Failid {selectedLeaveType?.requiresAttachment && '*'}
-              </label>
+              <label className="form-label">Failid{selectedLeaveType?.requiresAttachment ? ' *' : ''}</label>
               <div className="file-upload-area">
                 <input type="file" id="fileInput" multiple
                   accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx"
                   onChange={handleFileSelect} className="file-input" disabled={loading} />
                 <label htmlFor="fileInput" className="file-upload-button">Lisa failid</label>
-                <span className="file-hint">PDF, pildid, Word (max 10MB)</span>
+                <span className="file-hint">PDF, pildid, Word (max 10 MB)</span>
               </div>
               {errors.files && <span className="error-text">{errors.files}</span>}
               {selectedFiles.length > 0 && (
                 <div className="selected-files">
-                  {selectedFiles.map((file, index) => (
-                    <div key={index} className="file-item">
-                      <span className="file-name">{file.name}</span>
-                      <span className="file-size">({(file.size / 1024).toFixed(1)} KB)</span>
-                      <button type="button" onClick={() => removeFile(index)}
-                        className="file-remove" disabled={loading}>×</button>
+                  {selectedFiles.map((f, i) => (
+                    <div key={i} className="file-item">
+                      <span className="file-name">{f.name}</span>
+                      <span className="file-size">({(f.size / 1024).toFixed(1)} KB)</span>
+                      <button type="button" className="file-remove" onClick={() => removeFile(i)} disabled={loading}>×</button>
                     </div>
                   ))}
                 </div>
@@ -436,11 +411,14 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           </section>
         )}
 
+        {/* ── Actions ──────────────────────────── */}
         <div className="form-actions">
           <div className="submit-context">
             {workingDays > 0 ? (
               <>
-                <div>Kasutab: <strong>{workingDays} tööpäeva</strong>{calendarDays !== workingDays && ` (${calendarDays} kp kokku)`}</div>
+                <div>Kasutab: <strong>{workingDays} tööpäeva</strong>
+                  {calendarDays !== workingDays && ` (${calendarDays} kp)`}
+                </div>
                 {selectedLeaveType?.isPaid && userBalance && (
                   <div>Alles jääb: <strong>{Math.max(0, userBalance.remainingLeaveDays - workingDays)} tööpäeva</strong></div>
                 )}
@@ -451,8 +429,10 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
           </div>
           <div className="submit-buttons">
             {editRequest && (
-              <button type="button" onClick={handleCancelEdit}
-                className="btn-secondary" disabled={loading}>Tühista</button>
+              <button type="button" className="btn-secondary" disabled={loading}
+                onClick={() => { resetForm(); onCancel(); }}>
+                Tühista
+              </button>
             )}
             <button type="submit" className="btn-primary"
               disabled={loading || Object.keys(errors).length > 0}>

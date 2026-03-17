@@ -123,10 +123,45 @@
   background: #f0f0f2;
   border: 1px solid transparent;
   cursor: default;
-  transition: transform 80ms ease;
+  transition: transform 60ms ease;
 }
 
-.yt-day:hover { transform: scale(1.4); z-index: 1; }
+.yt-day:hover { transform: scale(1.6); z-index: 2; }
+
+/* Custom tooltip */
+.yt-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  background: #1D1D1F;
+  color: #fff;
+  font-size: 12px;
+  padding: 7px 10px;
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.yt-tooltip-swatch {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-bottom: 2px;
+}
+
+.yt-tooltip-date {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.yt-tooltip-line {
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+}
 
 .yt-today {
   background: #1D1D1F !important;

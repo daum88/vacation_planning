@@ -156,6 +156,19 @@
   color: #8a0000;
 }
 
+.suggestion-badge.conflict-high {
+  background: #fde8e8;
+  border-color: #f87171;
+  color: #7f1d1d;
+  font-weight: 700;
+}
+
+.suggestion-badge.conflict-low {
+  background: #fff7f0;
+  border-color: #fed7aa;
+  color: #7c3a00;
+}
+
 .suggestion-select {
   flex-shrink: 0;
   height: 28px;
