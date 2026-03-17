@@ -181,7 +181,7 @@ const YearTimeline = () => {
         <div className="yt-legend-item"><div className="yt-legend-dot" style={{ background: '#0071E3' }} />Kinnitatud puhkus</div>
         <div className="yt-legend-item"><div className="yt-legend-dot" style={{ background: 'transparent', border: '1px dashed #999' }} />Ootel taotlus</div>
         <div className="yt-legend-item"><div className="yt-legend-dot" style={{ background: '#fffdf0', border: '1px solid #ffdca1' }} />Riigipüha</div>
-        <div className="yt-legend-item"><div className="yt-legend-dot" style={{ background: '#f5f5f7' }} />Nädalavahetus</div>
+        <div className="yt-legend-item"><div className="yt-legend-dot" style={{ background: '#e2e4e8', border: '1px solid #d0d2d8' }} />Nädalavahetus</div>
         <div className="yt-legend-item"><div className="yt-legend-dot" style={{ background: '#1D1D1F' }} />Täna</div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calendarApi } from '../../api/api';
+import CustomSelect from '../CustomSelect/CustomSelect';
 import './TeamCalendar.css';
 
 const TeamCalendar = () => {
@@ -143,16 +144,16 @@ const TeamCalendar = () => {
         </div>
 
         <div className="calendar-controls">
-          <select
+          <CustomSelect
+            className="dept-custom-select"
+            options={[
+              { value: '', label: 'Kõik osakonnad' },
+              ...departments.map(d => ({ value: d, label: d })),
+            ]}
             value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="department-select"
-          >
-            <option value="">Kõik osakonnad</option>
-            {departments.map(dept => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
+            onChange={setSelectedDepartment}
+            placeholder="Kõik osakonnad"
+          />
 
           <div className="month-nav">
             <button onClick={() => changeMonth(-1)} className="btn-nav" aria-label="Eelmine kuu">‹</button>

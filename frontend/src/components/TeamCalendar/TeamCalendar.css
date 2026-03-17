@@ -31,18 +31,8 @@
   align-items: center;
 }
 
-.department-select {
-  height: 38px;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  padding: 0 12px;
-  min-width: 190px;
-}
-
-.department-select:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0,113,227,0.14);
-  outline: none;
+.dept-custom-select {
+  width: 190px;
 }
 
 .month-nav {
