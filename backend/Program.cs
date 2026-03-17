@@ -34,15 +34,36 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Initialize database
+// Initialize database — auto-recreate if schema is outdated
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<VacationRequestContext>();
-    context.Database.EnsureDeleted(); // Delete old database for clean migration
+    var logger  = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    // Check whether all required tables exist. If any are missing (stale schema),
+    // drop and recreate the whole DB so EnsureCreated seeds fresh data.
+    bool schemaOk = true;
+    try
+    {
+        // Quick probe: query each new table — throws if the table doesn't exist
+        context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM BlackoutPeriods");
+        context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM DepartmentCapacities");
+        context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM RequestComments");
+        context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM NotificationLogs");
+    }
+    catch
+    {
+        schemaOk = false;
+    }
+
+    if (!schemaOk)
+    {
+        logger.LogWarning("Schema out of date — recreating database with seed data.");
+        context.Database.EnsureDeleted();
+    }
+
     context.Database.EnsureCreated();
-    
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Database initialized with seed data");
+    logger.LogInformation("Database ready.");
 }
 
 // Configure the HTTP request pipeline.
