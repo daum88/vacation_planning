@@ -1,69 +1,30 @@
-using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using VacationRequestApi.Data;
 using VacationRequestApi.Models;
 
 namespace VacationRequestApi.Services
 {
+    // Legacy audit service interface - kept for backwards compatibility
+    // New code should use IAuditLogService instead
     public interface IAuditService
     {
-        Task LogActionAsync(int vacationRequestId, int userId, AuditAction action, string? details = null, 
-            object? oldValues = null, object? newValues = null, string? ipAddress = null, string? userAgent = null);
-        Task<List<AuditLog>> GetAuditLogsForRequestAsync(int vacationRequestId);
+        Task LogActionAsync(int vacationRequestId, int userId, string action, string? details = null, 
+            DateTime? timestamp = null);
+        Task<List<object>> GetAuditLogsForRequestAsync(int vacationRequestId);
     }
 
+    // Empty implementation - audit logging handled by AuditLogService
     public class AuditService : IAuditService
     {
-        private readonly VacationRequestContext _context;
-        private readonly ILogger<AuditService> _logger;
-
-        public AuditService(VacationRequestContext context, ILogger<AuditService> logger)
+        public Task LogActionAsync(int vacationRequestId, int userId, string action, string? details = null, 
+            DateTime? timestamp = null)
         {
-            _context = context;
-            _logger = logger;
+            // No-op: AuditLogService handles all audit logging now
+            return Task.CompletedTask;
         }
 
-        public async Task LogActionAsync(int vacationRequestId, int userId, AuditAction action, 
-            string? details = null, object? oldValues = null, object? newValues = null, 
-            string? ipAddress = null, string? userAgent = null)
+        public Task<List<object>> GetAuditLogsForRequestAsync(int vacationRequestId)
         {
-            try
-            {
-                var auditLog = new AuditLog
-                {
-                    VacationRequestId = vacationRequestId,
-                    UserId = userId,
-                    Action = action,
-                    Details = details,
-                    OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues) : null,
-                    NewValues = newValues != null ? JsonSerializer.Serialize(newValues) : null,
-                    IpAddress = ipAddress,
-                    UserAgent = userAgent,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                _context.AuditLogs.Add(auditLog);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation(
-                    "Audit log created: User {UserId} performed {Action} on Request {RequestId}",
-                    userId, action, vacationRequestId
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to create audit log for request {RequestId}", vacationRequestId);
-                // Don't throw - audit failure shouldn't break the main operation
-            }
-        }
-
-        public async Task<List<AuditLog>> GetAuditLogsForRequestAsync(int vacationRequestId)
-        {
-            return await _context.AuditLogs
-                .Include(a => a.User)
-                .Where(a => a.VacationRequestId == vacationRequestId)
-                .OrderByDescending(a => a.Timestamp)
-                .ToListAsync();
+            // Return empty list
+            return Task.FromResult(new List<object>());
         }
     }
 }

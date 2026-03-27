@@ -5,95 +5,42 @@ import Statistics from './components/Statistics/Statistics';
 import AdminDashboard from './components/AdminDashboard/AdminDashboard';
 import TeamCalendar from './components/TeamCalendar/TeamCalendar';
 import YearTimeline from './components/YearTimeline/YearTimeline';
+import NotificationBell from './components/NotificationBell/NotificationBell';
 import { useToast } from './components/Toast/Toast';
-import { vacationRequestsApi, usersApi, setUserId, getCurrentUserId } from './api/api';
+import { vacationRequestsApi, usersApi } from './api/api';
+import ManagerDelegation from './components/ManagerDelegation/ManagerDelegation';
 import './App.css';
 
-// ── User picker ────────────────────────────────────────────────────────
+// ── User Info Display ──────────────────────────────────────────────
 const initials = (u) =>
   u ? `${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase() : '?';
 
-const UserPicker = ({ users, currentUser, onSelect }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
-  }, [open]);
-
+const UserInfoDisplay = ({ currentUser }) => {
   if (!currentUser) return null;
 
   return (
-    <div ref={ref} className={`up-wrapper ${open ? 'up-open' : ''}`}>
-      <button
-        type="button"
-        className="up-trigger"
-        onClick={() => setOpen(o => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <div className="up-avatar" aria-hidden="true">{initials(currentUser)}</div>
-        <div className="up-info">
-          <span className="up-name">{currentUser.fullName}</span>
-          <span className="up-meta">
-            {currentUser.department}
-            {currentUser.isAdmin && <span className="up-admin-badge">Admin</span>}
-          </span>
-        </div>
-        <svg className="up-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="up-dropdown" role="listbox">
-          <div className="up-dropdown-label">Lülitu kasutajale</div>
-          {users.map(u => (
-            <button
-              key={u.id}
-              type="button"
-              role="option"
-              aria-selected={u.id === currentUser.id}
-              className={`up-option ${u.id === currentUser.id ? 'up-option-active' : ''}`}
-              onClick={() => { onSelect(u.id); setOpen(false); }}
-            >
-              <div className="up-option-avatar">{initials(u)}</div>
-              <div className="up-option-info">
-                <div className="up-option-name">
-                  {u.fullName}
-                  {u.isAdmin && <span className="up-admin-badge">Admin</span>}
-                </div>
-                <div className="up-option-meta">
-                  {u.department}{u.position ? ` · ${u.position}` : ''}
-                </div>
-              </div>
-              {u.id === currentUser.id && (
-                <svg className="up-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="user-info-display">
+      <div className="up-avatar" aria-hidden="true">{initials(currentUser)}</div>
+      <div className="up-info">
+        <span className="up-name">{currentUser.fullName}</span>
+        <span className="up-meta">
+          {currentUser.department}
+          {currentUser.isAdmin && <span className="up-admin-badge">Admin</span>}
+        </span>
+      </div>
     </div>
   );
 };
 
 // ── Main app ───────────────────────────────────────────────────────────
-function App() {
+function App({ onLogout }) {
   const [requests, setRequests]       = useState([]);
-  const [users, setUsers]             = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading]         = useState(true);
   const [editingRequest, setEditingRequest] = useState(null);
   const [currentView, setCurrentView] = useState('requests');
   // For admin users: 'admin' or 'my-requests'
   const [adminSubView, setAdminSubView] = useState('admin');
-  const [selectedUserId, setSelectedUserId] = useState(parseInt(getCurrentUserId()));
   const toast   = useToast();
   const formRef = useRef(null);
 
@@ -108,25 +55,19 @@ function App() {
     return { pending, approved, upcoming };
   }, [requests]);
 
-  useEffect(() => { fetchUsers(); }, []);
-
-  useEffect(() => {
+  useEffect(() => { 
     fetchCurrentUser();
     fetchRequests();
-  }, [selectedUserId]); // eslint-disable-line
-
-  const fetchUsers = async () => {
-    try {
-      const r = await usersApi.getAll();
-      setUsers(r.data);
-    } catch { /* non-critical, users list just won't populate */ }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCurrentUser = async () => {
     try {
       const r = await usersApi.getCurrent();
+      console.log('Fetched current user:', r.data);
       setCurrentUser(r.data);
-    } catch { /* handled silently; UI degrades gracefully */ }
+    } catch (err) {
+      console.error('Failed to fetch current user:', err);
+    }
   };
 
   const fetchRequests = async () => {
@@ -177,19 +118,19 @@ function App() {
     }
   };
 
-  const handleUserSwitch = (userId) => {
-    setUserId(userId);
-    setSelectedUserId(userId);
-    setEditingRequest(null);
-    setCurrentView('requests');
-    setAdminSubView('admin');
-  };
-
   const renderEmployeeDashboard = () => {
     switch (currentView) {
-      case 'statistics': return <Statistics key={selectedUserId} />;
-      case 'calendar':   return <TeamCalendar />;
-      case 'timeline':   return <YearTimeline />;
+      case 'statistics':   return <Statistics />;
+      case 'calendar':     return <TeamCalendar />;
+      case 'timeline':     return <YearTimeline />;
+      case 'delegations':  return (
+        <div className="dashboard-flow">
+          <section className="primary-action-section">
+            <div className="section-kicker">DELEGEERIMINE</div>
+            <ManagerDelegation />
+          </section>
+        </div>
+      );
       default:
         return (
           <div className="dashboard-flow">
@@ -210,6 +151,7 @@ function App() {
                 onWithdraw={handleWithdraw}
                 onRefresh={fetchRequests}
                 loading={loading}
+                isAdmin={isAdmin}
               />
             </section>
           </div>
@@ -269,11 +211,22 @@ function App() {
             </span>
             <h1 className="header-title">Puhkusetaotlused</h1>
           </div>
-          <UserPicker
-            users={users}
-            currentUser={currentUser}
-            onSelect={handleUserSwitch}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <NotificationBell />
+            <UserInfoDisplay currentUser={currentUser} />
+            <button 
+              onClick={onLogout}
+              className="logout-button"
+              title="Logi välja"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Logi välja
+            </button>
+          </div>
         </div>
       </header>
 
@@ -301,16 +254,49 @@ function App() {
               </div>
 
               {adminSubView === 'admin' ? (
-                <AdminDashboard currentAdminUserId={selectedUserId} />
+                <AdminDashboard currentAdminUserId={currentUser?.id} />
               ) : (
                 <div>
                   {renderSummaryBar()}
+                  <div className="page-layout">
+                    <nav className="page-sidebar">
+                      <div className="view-toggle">
+                        {[
+                          { id: 'requests',   label: 'Taotlused',  cls: 'tab-requests'   },
+                          { id: 'statistics', label: 'Statistika', cls: 'tab-statistics' },
+                          { id: 'calendar',   label: 'Kalender',   cls: 'tab-calendar'   },
+                          { id: 'timeline',   label: 'Aasta',      cls: 'tab-timeline'   },
+                        ].map(t => (
+                          <button
+                            key={t.id}
+                            className={`toggle-btn ${t.cls} ${currentView === t.id ? 'active' : ''}`}
+                            onClick={() => setCurrentView(t.id)}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </nav>
+                    <div className="page-content">
+                      {renderEmployeeDashboard()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── Employee ── */
+            <div>
+              {renderSummaryBar()}
+              <div className="page-layout">
+                <nav className="page-sidebar">
                   <div className="view-toggle">
                     {[
-                      { id: 'requests',   label: 'Taotlused',  cls: 'tab-requests'   },
-                      { id: 'statistics', label: 'Statistika', cls: 'tab-statistics' },
-                      { id: 'calendar',   label: 'Kalender',   cls: 'tab-calendar'   },
-                      { id: 'timeline',   label: 'Aasta',      cls: 'tab-timeline'   },
+                      { id: 'requests',     label: 'Taotlused',     cls: 'tab-requests'    },
+                      { id: 'statistics',   label: 'Statistika',    cls: 'tab-statistics'  },
+                      { id: 'calendar',     label: 'Kalender',      cls: 'tab-calendar'    },
+                      { id: 'timeline',     label: 'Aasta',         cls: 'tab-timeline'    },
+                      { id: 'delegations',  label: 'Delegeerimine', cls: 'tab-delegations' },
                     ].map(t => (
                       <button
                         key={t.id}
@@ -321,31 +307,11 @@ function App() {
                       </button>
                     ))}
                   </div>
+                </nav>
+                <div className="page-content">
                   {renderEmployeeDashboard()}
                 </div>
-              )}
-            </div>
-          ) : (
-            /* ── Employee ── */
-            <div>
-              {renderSummaryBar()}
-              <div className="view-toggle">
-                {[
-                  { id: 'requests',   label: 'Taotlused',  cls: 'tab-requests'   },
-                  { id: 'statistics', label: 'Statistika', cls: 'tab-statistics' },
-                  { id: 'calendar',   label: 'Kalender',   cls: 'tab-calendar'   },
-                  { id: 'timeline',   label: 'Aasta',      cls: 'tab-timeline'   },
-                ].map(t => (
-                  <button
-                    key={t.id}
-                    className={`toggle-btn ${t.cls} ${currentView === t.id ? 'active' : ''}`}
-                    onClick={() => setCurrentView(t.id)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
               </div>
-              {renderEmployeeDashboard()}
             </div>
           )}
 

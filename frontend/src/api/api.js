@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-const getUserId = () => localStorage.getItem('userId') || '1';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,8 +10,10 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    if (!config.params) config.params = {};
-    config.params.userId = getUserId();
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -24,6 +24,10 @@ api.interceptors.response.use(
   (error) => {
     if (!error.response) {
       error.message = 'Server ei vasta. Palun kontrollige võrguühendust.';
+    } else if (error.response.status === 401) {
+      // Unauthorized - redirect to login
+      localStorage.clear();
+      window.location.href = '/login';
     } else if (error.response.status === 500) {
       error.message = 'Serveri viga. Palun proovige hiljem uuesti.';
     } else if (error.response.status === 403) {
@@ -50,7 +54,7 @@ export const vacationRequestsApi = {
   getStatistics: ()        => api.get('/VacationRequests/statistics'),
   exportCsv:     ()        => api.get('/VacationRequests/export/csv', { responseType: 'blob' }),
   exportIcal:    ()        => api.get('/VacationRequests/export/ical', { responseType: 'blob' }),
-  getICalFeedUrl:(userId)  => `${API_BASE_URL}/VacationRequests/ical/user/${userId}`,
+  getICalFeedUrl:(userId)  => `${window.location.origin}/api/VacationRequests/ical/user/${userId}`,
 
   getAuditLogs:  (id)      => api.get(`/VacationRequests/${id}/audit`),
   getComments:   (id)      => api.get(`/VacationRequests/${id}/comments`),
@@ -80,8 +84,11 @@ export const usersApi = {
 };
 
 export const leaveTypesApi = {
-  getAll:  (includeInactive = false) => api.get('/LeaveTypes', { params: { includeInactive } }),
-  getById: (id) => api.get(`/LeaveTypes/${id}`),
+  getAll:   (includeInactive = false) => api.get('/LeaveTypes', { params: { includeInactive } }),
+  getById:  (id)    => api.get(`/LeaveTypes/${id}`),
+  create:   (dto)   => api.post('/LeaveTypes', dto),
+  update:   (id, dto) => api.put(`/LeaveTypes/${id}`, dto),
+  delete:   (id)    => api.delete(`/LeaveTypes/${id}`),
 };
 
 export const calendarApi = {
@@ -110,10 +117,77 @@ export const departmentCapacityApi = {
 };
 
 export const notificationsApi = {
-  getAll: (limit = 50) => api.get('/Notifications', { params: { limit } }),
+  getAll:  (limit = 50) => api.get('/Notifications', { params: { limit } }),
+  getMy:   (since)      => api.get('/Notifications/my', since ? { params: { since } } : {}),
 };
 
-export const setUserId       = (id)  => localStorage.setItem('userId', String(id));
-export const getCurrentUserId = ()   => getUserId();
+export const authApi = {
+  login:           (email, password) => api.post('/Auth/login', { email, password }),
+  logout:          ()                => api.post('/Auth/logout'),
+  changePassword:  (currentPassword, newPassword) =>
+    api.post('/Auth/change-password', { currentPassword, newPassword }),
+};
+
+export const registrationApi = {
+  register:         (data) => api.post('/Registration/register', data),
+  completeProfile:  (data) => api.post('/Registration/complete-profile', data),
+};
+
+export const organizationsApi = {
+  getAll:   ()       => api.get('/Organizations'),
+  getById:  (id)     => api.get(`/Organizations/${id}`),
+  create:   (data)   => api.post('/Organizations', data),
+  update:   (id, data) => api.put(`/Organizations/${id}`, data),
+  delete:   (id)     => api.delete(`/Organizations/${id}`),
+};
+
+export const joinRequestsApi = {
+  getMy:    ()       => api.get('/JoinRequests/my'),
+  getAll:   ()       => api.get('/JoinRequests'),
+  review:   (id, data) => api.post(`/JoinRequests/${id}/review`, data),
+  cancel:   (id)     => api.post(`/JoinRequests/${id}/cancel`),
+};
+
+export const adminUserManagementApi = {
+  getAll:           ()         => api.get('/AdminUserManagement'),
+  invite:           (data)     => api.post('/AdminUserManagement/invite', data),
+  resetPassword:    (id)       => api.post(`/AdminUserManagement/${id}/reset-password`),
+  toggleActivation: (id)       => api.post(`/AdminUserManagement/${id}/toggle-activation`),
+  toggleAdmin:      (id)       => api.post(`/AdminUserManagement/${id}/toggle-admin`),
+  delete:           (id)       => api.delete(`/AdminUserManagement/${id}`),
+};
+
+export const auditLogsApi = {
+  getLogs:    (params) => api.get('/AuditLogs', { params }),
+  getSummary: ()       => api.get('/AuditLogs/summary'),
+};
+
+export const publicHolidaysApi = {
+  getByYear:  (year)        => api.get('/PublicHolidays', { params: { year } }),
+  getInRange: (start, end)  => api.get('/PublicHolidays/range', { params: { start, end } }),
+  getAllRaw:   ()            => api.get('/PublicHolidays/all'),
+  create:     (dto)         => api.post('/PublicHolidays', dto),
+  update:     (id, dto)     => api.put(`/PublicHolidays/${id}`, dto),
+  delete:     (id)          => api.delete(`/PublicHolidays/${id}`),
+};
+
+export const delegationsApi = {
+  getMy:   ()    => api.get('/ManagerDelegations/my'),
+  getAll:  ()    => api.get('/ManagerDelegations'),
+  create:  (dto) => api.post('/ManagerDelegations', dto),
+  cancel:  (id)  => api.delete(`/ManagerDelegations/${id}`),
+};
+
+export const requestHistoryApi = {
+  get: (requestId) => api.get(`/VacationRequests/${requestId}/history`),
+};
+
+// Helper to get current user ID from localStorage
+export const getCurrentUserId = () => {
+  const userId = localStorage.getItem('userId');
+  return userId ? parseInt(userId) : null;
+};
+
+export const setUserId = (id) => localStorage.setItem('userId', String(id));
 
 export default api;

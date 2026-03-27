@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import {
   vacationRequestsApi, usersApi, blackoutPeriodsApi,
-  notificationsApi, departmentCapacityApi
+  notificationsApi, departmentCapacityApi, leaveTypesApi, publicHolidaysApi
 } from '../../api/api';
 import { formatDate } from '../../utils/dateUtils';
 import { useToast } from '../Toast/Toast';
 import CommentThread from '../CommentThread/CommentThread';
-import CustomSelect from '../CustomSelect/CustomSelect';
 import DatePicker from '../DatePicker/DatePicker';
 import StatusBadge from '../StatusBadge/StatusBadge';
+import AdminUserManagement from '../AdminUserManagement/AdminUserManagement';
+import JoinRequestsManagement from '../JoinRequestsManagement/JoinRequestsManagement';
+import AuditLogViewer from '../AuditLogViewer/AuditLogViewer';
+import RequestHistory from '../RequestHistory/RequestHistory';
 import './AdminDashboard.css';
 
 const TABS = [
+  { id: 'overview',      label: 'Ülevaade' },
   { id: 'requests',      label: 'Taotlused' },
   { id: 'team',          label: 'Meeskond' },
+  { id: 'users',         label: 'Kasutajad' },
+  { id: 'joinrequests',  label: 'Liitumistaotlused' },
   { id: 'carryover',     label: 'Ülekanded' },
   { id: 'capacity',      label: 'Limiidid' },
   { id: 'blackouts',     label: 'Blokeeringud' },
+  { id: 'leavetypes',    label: 'Puhkusetüübid' },
+  { id: 'holidays',      label: 'Riigipühad' },
+  { id: 'audit',         label: 'Auditilogi' },
   { id: 'notifications', label: 'Teavituste logi' },
 ];
 
@@ -28,6 +37,14 @@ const AdminDashboard = ({ currentAdminUserId }) => {
   const [blackouts, setBlackouts]           = useState([]);
   const [notifications, setNotifications]   = useState([]);
   const [deptCapacities, setDeptCapacities] = useState([]);
+  const [leaveTypes, setLeaveTypes]         = useState([]);
+  const [ltLoading, setLtLoading]           = useState(false);
+  const [ltForm, setLtForm]                 = useState(null); // null | 'new' | leaveType object
+  const [ltConfirmDelete, setLtConfirmDelete] = useState(null);
+  const [holidays, setHolidays]             = useState([]);
+  const [hlLoading, setHlLoading]           = useState(false);
+  const [hlForm, setHlForm]                 = useState(null);
+  const [hlConfirmDelete, setHlConfirmDelete] = useState(null);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState(null);
   const [view, setView]                     = useState('pending');
@@ -48,7 +65,7 @@ const AdminDashboard = ({ currentAdminUserId }) => {
   const [resetMaxCarry, setResetMaxCarry]   = useState(5);
   const [resetResult, setResetResult]       = useState(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [activeTab, setActiveTab]           = useState('requests');
+  const [activeTab, setActiveTab]           = useState('overview');
   const toast = useToast();
 
   useEffect(() => { fetchAll(); }, [view]); // eslint-disable-line
@@ -83,9 +100,29 @@ const AdminDashboard = ({ currentAdminUserId }) => {
     } catch { /* notifications unavailable */ }
   };
 
+  const fetchLeaveTypes = async () => {
+    setLtLoading(true);
+    try {
+      const res = await leaveTypesApi.getAll(true);
+      setLeaveTypes(res.data || []);
+    } catch { toast.error('Viga puhkusetüüpide laadimisel'); }
+    finally { setLtLoading(false); }
+  };
+
+  const fetchHolidays = async () => {
+    setHlLoading(true);
+    try {
+      const res = await publicHolidaysApi.getAllRaw();
+      setHolidays(res.data || []);
+    } catch { toast.error('Viga riigipühade laadimisel'); }
+    finally { setHlLoading(false); }
+  };
+
   useEffect(() => {
     if (activeTab === 'notifications') fetchNotifications();
-  }, [activeTab]);
+    if (activeTab === 'leavetypes')    fetchLeaveTypes();
+    if (activeTab === 'holidays')      fetchHolidays();
+  }, [activeTab]); // eslint-disable-line
 
   // ── Week helpers ───────────────────────────────────────────────────
   const getWeekRange = (offsetWeeks = 0) => {
@@ -263,65 +300,174 @@ const AdminDashboard = ({ currentAdminUserId }) => {
 
       {/* ── Page header ──────────────────────────────────────────────── */}
       <div className="admin-page-header">
-        <div>
+        <div className="admin-header-top">
           <h1 className="admin-page-title">Administreerimine</h1>
           <p className="admin-page-sub">Halda taotlusi, meeskonda ja seadeid.</p>
         </div>
         <div className="admin-summary-pills">
           <span className="a-pill">
+            <span className="a-pill-label">Ootel</span>
             <span className="a-pill-num">{pendingRequests.length}</span>
-            ootel
           </span>
           <span className="a-pill">
+            <span className="a-pill-label">Kinnitatud</span>
             <span className="a-pill-num">{allRequests.filter(r => r.status === 'Approved').length}</span>
-            kinnitatud
           </span>
           <span className="a-pill">
+            <span className="a-pill-label">Töötajat</span>
             <span className="a-pill-num">{users.length}</span>
-            töötajat
           </span>
         </div>
       </div>
 
-      {/* ── Tab bar ──────────────────────────────────────────────────── */}
-      <div className="admin-tab-bar">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`a-tab ${activeTab === t.id ? 'a-tab-active' : ''}`}
-            onClick={() => setActiveTab(t.id)}
-          >
-            {t.label}
-            {t.id === 'requests' && pendingRequests.length > 0 && (
-              <span className="a-tab-count">{pendingRequests.length}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <div className="page-layout">
+        <nav className="page-sidebar">
+          {/* ── Tab bar ──────────────────────────────────────────────────── */}
+          <div className="admin-tab-bar">
+            {TABS.map(t => (
+              <button
+                key={t.id}
+                className={`a-tab ${activeTab === t.id ? 'a-tab-active' : ''}`}
+                onClick={() => setActiveTab(t.id)}
+              >
+                {t.label}
+                {t.id === 'requests' && pendingRequests.length > 0 && (
+                  <span className="a-tab-count">{pendingRequests.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </nav>
+        <div className="page-content">
+          {/* ── Tab content ──────────────────────────────────────────────── */}
+          <div className="admin-tab-content">
 
-      {/* ── Tab content ──────────────────────────────────────────────── */}
-      <div className="admin-tab-content">
+        {/* ─── OVERVIEW ───────────────────────────────────────────────── */}
+        {activeTab === 'overview' && (
+          <div className="a-section">
+            <div className="a-section-header">
+              <div>
+                <div className="a-section-title">Töölaua ülevaade</div>
+                <div className="a-section-desc">
+                  Kiirvaade kõige olulisemale: ootel taotlused, praegused puhkused ja meeldetuletused.
+                </div>
+              </div>
+            </div>
+
+            {/* Stats cards */}
+            <div className="overview-grid">
+              <div className="overview-card overview-card-primary">
+                <div className="overview-card-label">Ootel taotlusi</div>
+                <div className="overview-card-value">{pendingRequests.length}</div>
+                <button className="overview-card-link" onClick={() => setActiveTab('requests')}>
+                  Vaata taotlusi →
+                </button>
+              </div>
+
+              <div className="overview-card">
+                <div className="overview-card-label">Kinnitatud taotlusi</div>
+                <div className="overview-card-value">{allRequests.filter(r => r.status === 'Approved').length}</div>
+              </div>
+
+              <div className="overview-card">
+                <div className="overview-card-label">Töötajaid</div>
+                <div className="overview-card-value">{users.length}</div>
+                <button className="overview-card-link" onClick={() => setActiveTab('team')}>
+                  Halda meeskonda →
+                </button>
+              </div>
+
+              <div className="overview-card">
+                <div className="overview-card-label">Blokeeringuid</div>
+                <div className="overview-card-value">{blackouts.length}</div>
+                <button className="overview-card-link" onClick={() => setActiveTab('blackouts')}>
+                  Halda blokeeringuid →
+                </button>
+              </div>
+            </div>
+
+            {/* Current week absences */}
+            {(() => {
+              const now = new Date();
+              const weekStart = new Date(now);
+              weekStart.setDate(now.getDate() - now.getDay() + 1);
+              const weekEnd = new Date(weekStart);
+              weekEnd.setDate(weekStart.getDate() + 6);
+
+              const thisWeekAbsences = allRequests.filter(r => {
+                if (r.status !== 'Approved') return false;
+                const start = new Date(r.startDate);
+                const end = new Date(r.endDate);
+                return (start <= weekEnd && end >= weekStart);
+              });
+
+              return thisWeekAbsences.length > 0 && (
+                <div className="overview-section">
+                  <div className="overview-section-title">Sellel nädalal eemal ({thisWeekAbsences.length})</div>
+                  <div className="overview-absence-list">
+                    {thisWeekAbsences.map(r => (
+                      <div key={r.id} className="overview-absence-item">
+                        <div className="overview-absence-who">
+                          <strong>{r.userName || `Töötaja #${r.userId}`}</strong>
+                          {r.department && <span className="overview-absence-dept">{r.department}</span>}
+                        </div>
+                        <div className="overview-absence-dates">
+                          {new Date(r.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – {new Date(r.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Recent activity */}
+            <div className="overview-section">
+              <div className="overview-section-title">Viimased tegevused</div>
+              <div className="overview-activity-list">
+                {allRequests.slice(0, 8).map(r => (
+                  <div key={r.id} className="overview-activity-item">
+                    <div className="overview-activity-status">
+                      <StatusBadge status={r.status} />
+                    </div>
+                    <div className="overview-activity-who">{r.userName || `Töötaja #${r.userId}`}</div>
+                    <div className="overview-activity-dates">
+                      {new Date(r.startDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })} – {new Date(r.endDate).toLocaleDateString('et-EE', { day: '2-digit', month: 'short' })}
+                    </div>
+                    <div className="overview-activity-days">{r.daysCount} tp</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─── REQUESTS ──────────────────────────────────────────────── */}
         {activeTab === 'requests' && (
           <div className="a-section">
-            {/* View sub-toggle */}
-            <div className="a-view-toggle">
-              <button
-                className={`a-view-btn ${view === 'pending' ? 'active' : ''}`}
-                onClick={() => setView('pending')}
-              >
-                Ootel
-                <span className="a-view-count">{pendingRequests.length}</span>
-              </button>
-              <button
-                className={`a-view-btn ${view === 'all' ? 'active' : ''}`}
-                onClick={() => setView('all')}
-              >
-                Kõik
-                <span className="a-view-count">{allRequests.length}</span>
-              </button>
-            </div>
+            <div className="a-requests-layout">
+              {/* Left: Filters */}
+              <div className="a-requests-filters">
+                <div className="a-view-toggle">
+                  <button
+                    className={`a-view-btn ${view === 'pending' ? 'active' : ''}`}
+                    onClick={() => setView('pending')}
+                  >
+                    <span>Ootel</span>
+                    <span className="a-view-count">{pendingRequests.length}</span>
+                  </button>
+                  <button
+                    className={`a-view-btn ${view === 'all' ? 'active' : ''}`}
+                    onClick={() => setView('all')}
+                  >
+                    <span>Kõik</span>
+                    <span className="a-view-count">{allRequests.length}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: List */}
+              <div className="a-requests-content">
 
             {/* Bulk bar */}
             {view === 'pending' && pendingRequests.length > 0 && (
@@ -496,6 +642,7 @@ const AdminDashboard = ({ currentAdminUserId }) => {
                       {expandedComments === req.id && (
                         <div className="a-comment-thread">
                           <CommentThread requestId={req.id} isAdmin={true} />
+                          <RequestHistory requestId={req.id} />
                         </div>
                       )}
                     </div>
@@ -503,6 +650,8 @@ const AdminDashboard = ({ currentAdminUserId }) => {
                 ))}
               </div>
             )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -925,6 +1074,241 @@ const AdminDashboard = ({ currentAdminUserId }) => {
           </div>
         )}
 
+        {/* ─── LEAVE TYPES ───────────────────────────────────────────── */}
+        {activeTab === 'leavetypes' && (
+          <div className="a-section">
+            <div className="a-section-header">
+              <div>
+                <div className="a-section-title">Puhkusetüübid</div>
+                <div className="a-section-desc">Halda puhkusetüüpe, limiite ja reegleid.</div>
+              </div>
+              {!ltForm && (
+                <button className="a-btn a-btn-primary" onClick={() => setLtForm({ name: '', description: '', color: '#246B45', requiresApproval: true, requiresAttachment: false, maxDaysPerYear: 25, advanceNoticeDays: 0, isPaid: true, isActive: true, displayOrder: 0 })}>
+                  Lisa tüüp
+                </button>
+              )}
+            </div>
+
+            {/* Add/Edit form */}
+            {ltForm && (() => {
+              const saveLt = async () => {
+                if (!ltForm.name.trim()) { toast.error('Nimi on kohustuslik'); return; }
+                setLtLoading(true);
+                try {
+                  const payload = { name: ltForm.name.trim(), description: ltForm.description?.trim() || null, color: ltForm.color, requiresApproval: ltForm.requiresApproval, requiresAttachment: ltForm.requiresAttachment, maxDaysPerYear: ltForm.maxDaysPerYear, advanceNoticeDays: ltForm.advanceNoticeDays, isPaid: ltForm.isPaid, isActive: ltForm.isActive, displayOrder: ltForm.displayOrder || 0 };
+                  if (ltForm.id) { await leaveTypesApi.update(ltForm.id, payload); toast.success('Puhkusetüüp uuendatud'); }
+                  else { await leaveTypesApi.create(payload); toast.success('Puhkusetüüp lisatud'); }
+                  setLtForm(null);
+                  await fetchLeaveTypes();
+                } catch (err) { toast.error(err?.response?.data?.message || 'Viga salvestamisel'); }
+                finally { setLtLoading(false); }
+              };
+              return (
+                <div className="lt-form-card">
+                  <div className="lt-form-title">{ltForm.id ? 'Muuda puhkusetüüpi' : 'Uus puhkusetüüp'}</div>
+                  <div className="lt-form-grid">
+                    <div className="lt-field">
+                      <label className="lt-label">Nimi *</label>
+                      <input className="a-text-input" value={ltForm.name} onChange={e => setLtForm(f => ({ ...f, name: e.target.value }))} placeholder="nt. Põhipuhkus" />
+                    </div>
+                    <div className="lt-field">
+                      <label className="lt-label">Kirjeldus</label>
+                      <input className="a-text-input" value={ltForm.description || ''} onChange={e => setLtForm(f => ({ ...f, description: e.target.value }))} placeholder="Valikuline" />
+                    </div>
+                    <div className="lt-field lt-field-sm">
+                      <label className="lt-label">Max päevi / aastas</label>
+                      <input className="a-num-input" type="number" min="1" max="365" value={ltForm.maxDaysPerYear} onChange={e => setLtForm(f => ({ ...f, maxDaysPerYear: parseInt(e.target.value) || 25 }))} />
+                    </div>
+                    <div className="lt-field lt-field-sm">
+                      <label className="lt-label" title="0 = piirang puudub">Etteteatamine (tp)</label>
+                      <input className="a-num-input" type="number" min="0" max="90" value={ltForm.advanceNoticeDays} onChange={e => setLtForm(f => ({ ...f, advanceNoticeDays: parseInt(e.target.value) || 0 }))} />
+                    </div>
+                    <div className="lt-field lt-field-sm">
+                      <label className="lt-label">Värv</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input type="color" value={ltForm.color} onChange={e => setLtForm(f => ({ ...f, color: e.target.value }))} style={{ width: 36, height: 36, border: '1px solid var(--color-border)', borderRadius: 4, cursor: 'pointer', padding: 2 }} />
+                        <span className="a-cell-mono" style={{ fontSize: 12 }}>{ltForm.color}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="lt-toggles">
+                    {[
+                      { key: 'requiresApproval', label: 'Nõuab kinnitust' },
+                      { key: 'requiresAttachment', label: 'Nõuab manust' },
+                      { key: 'isPaid', label: 'Tasustatud' },
+                      { key: 'isActive', label: 'Aktiivne' },
+                    ].map(({ key, label }) => (
+                      <label key={key} className="lt-toggle">
+                        <input type="checkbox" checked={ltForm[key]} onChange={e => setLtForm(f => ({ ...f, [key]: e.target.checked }))} />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="a-form-actions" style={{ marginTop: 16 }}>
+                    <button className="a-btn a-btn-primary" disabled={ltLoading} onClick={saveLt}>
+                      {ltLoading ? 'Salvestamine...' : 'Salvesta'}
+                    </button>
+                    <button className="a-btn a-btn-ghost" onClick={() => setLtForm(null)}>Tühista</button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {ltLoading && !ltForm ? (
+              <div className="a-empty">Laadimine...</div>
+            ) : leaveTypes.length === 0 ? (
+              <div className="a-empty">Puhkusetüüpe pole.</div>
+            ) : (
+              <div className="lt-cards">
+                {leaveTypes.map(lt => (
+                  <div key={lt.id} className={`lt-card${lt.isActive ? '' : ' lt-card-inactive'}`}>
+                    <div className="lt-card-header">
+                      <span className="lt-color-dot" style={{ background: lt.color }} />
+                      <span className="lt-card-name">{lt.name}</span>
+                      {!lt.isActive && <span className="lt-badge lt-badge-off">peidetud</span>}
+                      {lt.requiresAttachment && <span className="lt-badge lt-badge-attach">manus</span>}
+                    </div>
+                    {lt.description && <div className="lt-card-desc">{lt.description}</div>}
+                    <div className="lt-card-stats">
+                      <div className="lt-stat">
+                        <span className="lt-stat-label">Max / aastas</span>
+                        <span className="lt-stat-value">{lt.maxDaysPerYear} p</span>
+                      </div>
+                      <div className="lt-stat">
+                        <span className="lt-stat-label">Etteteatamine</span>
+                        <span className="lt-stat-value">{lt.advanceNoticeDays > 0 ? `${lt.advanceNoticeDays} tp` : '—'}</span>
+                      </div>
+                      <div className="lt-stat">
+                        <span className="lt-stat-label">Tasustus</span>
+                        <span className="lt-stat-value">{lt.isPaid ? 'Tasuline' : 'Palgata'}</span>
+                      </div>
+                      <div className="lt-stat">
+                        <span className="lt-stat-label">Kinnitus</span>
+                        <span className="lt-stat-value">{lt.requiresApproval ? 'Nõutud' : 'Automaatne'}</span>
+                      </div>
+                    </div>
+                    <div className="lt-card-actions">
+                      <button className="a-action-btn" onClick={() => setLtForm({ ...lt })}>Muuda</button>
+                      {ltConfirmDelete === lt.id ? (
+                        <>
+                          <button className="a-action-btn" style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={async () => {
+                            try { await leaveTypesApi.delete(lt.id); toast.success('Kustutatud'); setLtConfirmDelete(null); await fetchLeaveTypes(); }
+                            catch (err) { toast.error(err?.response?.data?.message || 'Viga kustutamisel'); setLtConfirmDelete(null); }
+                          }}>Jah, kustuta</button>
+                          <button className="a-action-btn" onClick={() => setLtConfirmDelete(null)}>Tühista</button>
+                        </>
+                      ) : (
+                        <button className="a-action-btn" onClick={() => setLtConfirmDelete(lt.id)}>Kustuta</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── PUBLIC HOLIDAYS ───────────────────────────────────────── */}
+        {activeTab === 'holidays' && (
+          <div className="a-section">
+            <div className="a-section-header">
+              <div>
+                <div className="a-section-title">Riigipühad</div>
+                <div className="a-section-desc">Korduvad (igal aastal) ja ühekordsed riigipühad.</div>
+              </div>
+              {!hlForm && (
+                <button className="a-btn a-btn-primary" onClick={() => setHlForm({ name: '', date: '', isRecurring: false, year: new Date().getFullYear() })}>
+                  Lisa riigipüha
+                </button>
+              )}
+            </div>
+
+            {hlForm && (() => {
+              const saveHl = async () => {
+                if (!hlForm.name.trim() || !hlForm.date) { toast.error('Nimi ja kuupäev on kohustuslikud'); return; }
+                setHlLoading(true);
+                try {
+                  const payload = { name: hlForm.name.trim(), date: hlForm.date, isRecurring: hlForm.isRecurring, year: hlForm.isRecurring ? null : (hlForm.year || new Date(hlForm.date).getFullYear()) };
+                  if (hlForm.id) { await publicHolidaysApi.update(hlForm.id, payload); toast.success('Uuendatud'); }
+                  else { await publicHolidaysApi.create(payload); toast.success('Lisatud'); }
+                  setHlForm(null); await fetchHolidays();
+                } catch (err) { toast.error(err?.response?.data?.message || 'Viga salvestamisel'); }
+                finally { setHlLoading(false); }
+              };
+              return (
+                <div className="lt-form-card">
+                  <div className="lt-form-title">{hlForm.id ? 'Muuda riigipüha' : 'Uus riigipüha'}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px auto', gap: '12px 16px', alignItems: 'end', marginBottom: 14 }}>
+                    <div className="lt-field">
+                      <label className="lt-label">Nimi *</label>
+                      <input className="a-text-input" value={hlForm.name} onChange={e => setHlForm(f => ({ ...f, name: e.target.value }))} placeholder="nt. Jõululaupäev" />
+                    </div>
+                    <div className="lt-field">
+                      <label className="lt-label">Kuupäev *</label>
+                      <input className="a-text-input" type="date" value={hlForm.date} onChange={e => setHlForm(f => ({ ...f, date: e.target.value }))} />
+                    </div>
+                    <div className="lt-field">
+                      <label className="lt-toggle" style={{ marginTop: 20 }}>
+                        <input type="checkbox" checked={hlForm.isRecurring} onChange={e => setHlForm(f => ({ ...f, isRecurring: e.target.checked }))} />
+                        Korduv (igal aastal)
+                      </label>
+                    </div>
+                  </div>
+                  <div className="a-form-actions">
+                    <button className="a-btn a-btn-primary" disabled={hlLoading} onClick={saveHl}>{hlLoading ? 'Salvestamine...' : 'Salvesta'}</button>
+                    <button className="a-btn a-btn-ghost" onClick={() => setHlForm(null)}>Tühista</button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {hlLoading && !hlForm ? (
+              <div className="a-empty">Laadimine...</div>
+            ) : (
+              <table className="a-table">
+                <thead>
+                  <tr>
+                    <th>Nimi</th>
+                    <th style={{ width: 120 }}>Kuupäev</th>
+                    <th style={{ width: 120 }}>Tüüp</th>
+                    <th style={{ width: 80 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {holidays.map(h => (
+                    <tr key={h.id}>
+                      <td>{h.name}</td>
+                      <td className="a-cell-mono">
+                        {h.isRecurring
+                          ? new Date(h.date).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' })
+                          : new Date(h.date).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </td>
+                      <td>
+                        <span className={`lt-badge ${h.isRecurring ? 'lt-badge-attach' : 'lt-badge-off'}`}>
+                          {h.isRecurring ? 'Korduv' : `${h.year ?? ''}`}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className="a-action-btn" onClick={() => setHlForm({ ...h, date: h.date.split('T')[0] })}>Muuda</button>
+                          {hlConfirmDelete === h.id ? (
+                            <>
+                              <button className="a-action-btn" style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={async () => { try { await publicHolidaysApi.delete(h.id); toast.success('Kustutatud'); setHlConfirmDelete(null); await fetchHolidays(); } catch { toast.error('Viga'); setHlConfirmDelete(null); } }}>Jah</button>
+                              <button className="a-action-btn" onClick={() => setHlConfirmDelete(null)}>Ei</button>
+                            </>
+                          ) : (
+                            <button className="a-action-btn" onClick={() => setHlConfirmDelete(h.id)}>Kustuta</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
         {/* ─── NOTIFICATIONS ─────────────────────────────────────────── */}
         {activeTab === 'notifications' && (
           <div className="a-section">
@@ -946,11 +1330,11 @@ const AdminDashboard = ({ currentAdminUserId }) => {
               <table className="a-table a-table-fixed">
                 <thead>
                   <tr>
-                    <th style={{ width: 110 }}>Tüüp</th>
-                    <th style={{ width: 180 }}>Saaja</th>
+                    <th style={{ width: 120 }}>Tüüp</th>
+                    <th style={{ width: 240 }}>Saaja</th>
                     <th>Teema</th>
-                    <th style={{ width: 130 }}>Aeg</th>
-                    <th style={{ width: 50 }}></th>
+                    <th style={{ width: 150 }}>Aeg</th>
+                    <th style={{ width: 60 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -976,6 +1360,29 @@ const AdminDashboard = ({ currentAdminUserId }) => {
           </div>
         )}
 
+        {/* ─── USERS MANAGEMENT ──────────────────────────────────────── */}
+        {activeTab === 'users' && (
+          <div className="a-section">
+            <AdminUserManagement />
+          </div>
+        )}
+
+        {/* ─── JOIN REQUESTS ──────────────────────────────────────────── */}
+        {activeTab === 'joinrequests' && (
+          <div className="a-section">
+            <JoinRequestsManagement />
+          </div>
+        )}
+
+        {/* ─── AUDIT LOG ──────────────────────────────────────────────── */}
+        {activeTab === 'audit' && (
+          <div className="a-section">
+            <AuditLogViewer />
+          </div>
+        )}
+
+      </div>
+        </div>
       </div>
     </div>
   );

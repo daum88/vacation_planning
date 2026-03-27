@@ -136,9 +136,18 @@ namespace VacationRequestApi.Services
         {
             try
             {
+                // Validate path to prevent directory traversal
                 if (!File.Exists(filePath))
                 {
                     throw new FileNotFoundException("Faili ei leitud.", filePath);
+                }
+
+                var fullPath = Path.GetFullPath(filePath);
+                var allowedBasePath = Path.GetFullPath(_uploadPath);
+                
+                if (!fullPath.StartsWith(allowedBasePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new UnauthorizedAccessException("Keelatud failitee.");
                 }
 
                 var fileBytes = await File.ReadAllBytesAsync(filePath);

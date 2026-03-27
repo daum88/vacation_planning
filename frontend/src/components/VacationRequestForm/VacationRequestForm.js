@@ -29,15 +29,49 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
   const [blackouts, setBlackouts]         = useState([]);
   const [capacityWarning, setCapacityWarning] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [hasDraft, setHasDraft]           = useState(false);
   const toast = useToast();
 
+  const DRAFT_KEY = 'vacation_request_draft';
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const uid = parseInt(localStorage.getItem('userId') || '1');
     setCurrentUserId(uid);
     fetchLeaveTypes();
     fetchUserBalance(uid);
     fetchBlackouts();
+    loadDraft();
   }, []);
+
+  const loadDraft = () => {
+    if (editRequest) return; // Don't load draft when editing
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        setFormData(draft);
+        setHasDraft(true);
+      }
+    } catch {
+      // Invalid draft, ignore
+    }
+  };
+
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      setHasDraft(true);
+      toast.success('Mustand salvestatud');
+    } catch {
+      toast.error('Viga mustandi salvestamisel');
+    }
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+  };
 
   useEffect(() => {
     if (editRequest) {
@@ -180,6 +214,7 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
         catch { toast.warning(`Viga faili ${f.name} üleslaadimisel`); }
       }
       resetForm();
+      clearDraft();
       fetchUserBalance(currentUserId);
       onSuccess();
     } catch (err) {
@@ -222,6 +257,16 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
 
       <form onSubmit={handleSubmit} className="vacation-request-form">
         {errors.general && <div className="form-error-banner">{errors.general}</div>}
+
+        {/* Draft notice */}
+        {!editRequest && hasDraft && (
+          <div className="draft-notice">
+            <strong>Mustand laaditud:</strong> Sul on salvestatud pooleli jäänud taotlus.
+            <button type="button" className="draft-clear-btn" onClick={() => { resetForm(); clearDraft(); }}>
+              Alusta puhta lehega
+            </button>
+          </div>
+        )}
 
         {/* Blackout warning */}
         {activeBlackouts.length > 0 && (
@@ -430,6 +475,12 @@ const VacationRequestForm = ({ onSuccess, editRequest, onCancel }) => {
               <button type="button" className="btn-secondary" disabled={loading}
                 onClick={() => { resetForm(); onCancel(); }}>
                 Tühista
+              </button>
+            )}
+            {!editRequest && (
+              <button type="button" className="btn-secondary" disabled={loading}
+                onClick={saveDraft}>
+                Salvesta mustand
               </button>
             )}
             <button type="submit" className="btn-primary"

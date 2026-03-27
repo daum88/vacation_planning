@@ -131,3 +131,56 @@ export function addWorkingDays(start, needed) {
   }
   return new Date(cur);
 }
+
+// ── Shared date format helpers ───────────────────────────────────────────────
+
+/**
+ * Format to ET short date: 05.03.2025
+ */
+export function fmtShort(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('et-EE', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+}
+
+/**
+ * Format to ET short date+month (no year): 05. märts
+ */
+export function fmtDayMonth(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('et-EE', {
+    day: '2-digit', month: 'short',
+  });
+}
+
+/**
+ * Format to ET short date range: 05.03 – 12.03
+ */
+export function fmtRange(start, end) {
+  if (!start || !end) return '';
+  const s = new Date(start).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' });
+  const e = new Date(end).toLocaleDateString('et-EE', { day: '2-digit', month: '2-digit' });
+  return `${s} – ${e}`;
+}
+
+/**
+ * Format to ET datetime: 05.03.25 14:30
+ */
+export function fmtDateTime(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleString('et-EE', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+/**
+ * Format to ET long date: 5. märts 2025
+ */
+export function fmtLong(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('et-EE', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+}

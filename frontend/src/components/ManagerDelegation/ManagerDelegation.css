@@ -1,0 +1,180 @@
+.md-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.md-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.md-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.md-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 3px;
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+/* Buttons */
+.md-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.md-btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.md-btn-primary:hover { background: var(--color-accent-hover); }
+.md-btn-ghost { background: transparent; color: var(--color-text-secondary); border-color: transparent; }
+.md-btn-ghost:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
+.md-btn-ghost-xs { height: 24px; padding: 0 9px; font-size: 11px; background: transparent; color: var(--color-text-secondary); border-color: var(--color-border); }
+.md-btn-ghost-xs:hover { background: var(--color-surface-hover); }
+.md-btn-danger-xs { height: 24px; padding: 0 9px; font-size: 11px; background: var(--color-rejected-bg); color: var(--color-rejected-text); border-color: var(--color-rejected-border); }
+
+/* Form */
+.md-form {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+
+.md-form-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 14px;
+}
+
+.md-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 140px 140px;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.md-field { display: flex; flex-direction: column; gap: 4px; }
+.md-field-full { grid-column: 1 / -1; }
+
+.md-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.md-input, .md-select {
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  padding: 0 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast);
+}
+.md-input:focus, .md-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.md-form-actions { display: flex; gap: 8px; }
+
+/* List */
+.md-empty {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  padding: 12px 0;
+}
+
+.md-list { display: flex; flex-direction: column; gap: 8px; }
+
+.md-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: box-shadow var(--transition-fast);
+}
+.md-item-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.md-item-left { display: flex; align-items: center; gap: 10px; }
+
+.md-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.md-item-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.md-item-dates {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.md-item-reason {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.md-item-right { display: flex; align-items: center; gap: 8px; }
+
+.md-status-chip {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--color-approved-bg);
+  color: var(--color-approved-text);
+}
+
+.md-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}

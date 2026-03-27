@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace VacationRequestApi.DTOs
 {
     // User DTOs
@@ -31,8 +33,37 @@ namespace VacationRequestApi.DTOs
         public bool RequiresApproval { get; set; }
         public bool RequiresAttachment { get; set; }
         public int MaxDaysPerYear { get; set; }
+        public int AdvanceNoticeDays { get; set; }
         public bool IsPaid { get; set; }
         public bool IsActive { get; set; }
+        public int DisplayOrder { get; set; }
+    }
+
+    public class LeaveTypeCreateUpdateDto
+    {
+        [Required(ErrorMessage = "Nimi on kohustuslik")]
+        [MaxLength(50)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(200)]
+        public string? Description { get; set; }
+
+        [Required]
+        [MaxLength(7)]
+        public string Color { get; set; } = "#007AFF";
+
+        public bool RequiresApproval { get; set; } = true;
+        public bool RequiresAttachment { get; set; } = false;
+
+        [Range(1, 365)]
+        public int MaxDaysPerYear { get; set; } = 25;
+
+        [Range(0, 90)]
+        public int AdvanceNoticeDays { get; set; } = 0;
+
+        public bool IsPaid { get; set; } = true;
+        public bool IsActive { get; set; } = true;
+        public int DisplayOrder { get; set; } = 0;
     }
 
     // Enhanced Vacation Request DTOs
@@ -105,12 +136,15 @@ namespace VacationRequestApi.DTOs
     public class AuditLogDto
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
-        public string? UserName { get; set; }
-        public string Action { get; set; } = string.Empty;
+        public int? UserId { get; set; }
+        public string? UserEmail { get; set; }
+        public string EventType { get; set; } = string.Empty;
+        public string? EntityType { get; set; }
+        public int? EntityId { get; set; }
         public string? Details { get; set; }
-        public DateTime Timestamp { get; set; }
         public string? IpAddress { get; set; }
+        public bool Success { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     // Filter DTOs
@@ -214,8 +248,8 @@ namespace VacationRequestApi.DTOs
         public DateTime EndDate { get; set; }
     }
 
-    // Public Holiday DTOs
-    public class PublicHolidayDto
+    // Public Holiday DTOs (simple, used by old iCal + dateUtils)
+    public class PublicHolidaySimpleDto
     {
         public DateTime Date { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -312,5 +346,112 @@ namespace VacationRequestApi.DTOs
         public int PreviousUsedDays { get; set; }
         public int PreviousCarryOver { get; set; }
         public int NewCarryOver { get; set; }
+    }
+
+    // Authentication DTOs
+    public class LoginRequestDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class LoginResponseDto
+    {
+        public string Token { get; set; } = string.Empty;
+        public int UserId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public bool IsAdmin { get; set; }
+        public string? Department { get; set; }
+        public bool IsTemporaryPassword { get; set; }
+        public bool IsProfileComplete { get; set; }
+    }
+
+    // ── User-facing notification bell ──────────────────────────────────────
+
+    public class UserNotificationItemDto
+    {
+        public int Id { get; set; }
+        /// <summary>comment | approved | rejected | pending</summary>
+        public string Type { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public int RequestId { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class UserNotificationsDto
+    {
+        public List<UserNotificationItemDto> Items { get; set; } = new();
+        public int UnreadCount { get; set; }
+        public DateTime FetchedAt { get; set; }
+    }
+
+    // ── Public Holidays ─────────────────────────────────────────────────────
+
+    public class PublicHolidayDto
+    {
+        public int Id { get; set; }
+        public DateTime Date { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public bool IsRecurring { get; set; }
+        public int? Year { get; set; }
+    }
+
+    public class PublicHolidayCreateUpdateDto
+    {
+        [Required]
+        public DateTime Date { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        public bool IsRecurring { get; set; } = false;
+        public int? Year { get; set; }
+    }
+
+    // ── Manager Delegation ───────────────────────────────────────────────────
+
+    public class ManagerDelegationDto
+    {
+        public int Id { get; set; }
+        public int ManagerId { get; set; }
+        public string ManagerName { get; set; } = string.Empty;
+        public int DelegateId { get; set; }
+        public string DelegateName { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string? Reason { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsCurrentlyActive { get; set; }
+    }
+
+    public class ManagerDelegationCreateDto
+    {
+        [Required]
+        public int DelegateId { get; set; }
+
+        [Required]
+        public DateTime StartDate { get; set; }
+
+        [Required]
+        public DateTime EndDate { get; set; }
+
+        [MaxLength(300)]
+        public string? Reason { get; set; }
+    }
+
+    // ── Request History ──────────────────────────────────────────────────────
+
+    public class RequestHistoryItemDto
+    {
+        public int Id { get; set; }
+        public string EventType { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? OldValue { get; set; }
+        public string? NewValue { get; set; }
+        public string? ActorName { get; set; }
+        public bool ActorIsAdmin { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

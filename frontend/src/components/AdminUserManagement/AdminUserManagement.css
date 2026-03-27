@@ -1,0 +1,400 @@
+.aum-container {
+  padding: 0;
+}
+
+.aum-loading {
+  padding: 40px;
+  color: var(--text-secondary, #6B6560);
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+}
+
+.aum-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.aum-title {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #1C1A17);
+  margin: 0 0 4px;
+}
+
+.aum-count {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+  color: var(--text-secondary, #6B6560);
+}
+
+/* Alerts */
+.aum-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+}
+
+.aum-alert--error {
+  background: #FFF0F0;
+  border: 1px solid #F5C6C6;
+  color: #C0392B;
+}
+
+.aum-alert--success {
+  background: #F0FFF4;
+  border: 1px solid #B7DEC8;
+  color: #1d6940;
+}
+
+.aum-alert-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+  margin-left: 12px;
+  opacity: 0.6;
+  line-height: 1;
+}
+
+.aum-alert-close:hover { opacity: 1; }
+
+/* Buttons */
+.aum-btn {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 9px 18px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.aum-btn--primary {
+  background: var(--accent, #246B45);
+  color: #fff;
+}
+.aum-btn--primary:hover:not(:disabled) { background: #1d5737; }
+.aum-btn--primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.aum-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary, #6B6560);
+  border: 1.5px solid var(--border-default, #E0DDD6);
+}
+.aum-btn--ghost:hover { border-color: var(--text-secondary, #6B6560); }
+
+.aum-btn--danger {
+  background: #E74C3C;
+  color: #fff;
+}
+.aum-btn--danger:hover { background: #c0392b; }
+
+/* Modal */
+.aum-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.aum-modal {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-default, #E0DDD6);
+  border-radius: 4px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+}
+
+.aum-modal--confirm {
+  max-width: 400px;
+}
+
+.aum-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.aum-modal-header h3 {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1C1A17);
+  margin: 0;
+}
+
+.aum-modal-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--text-secondary, #6B6560);
+  line-height: 1;
+  padding: 0;
+}
+.aum-modal-close:hover { color: var(--text-primary, #1C1A17); }
+
+.aum-modal h3 {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1C1A17);
+  margin: 0 0 12px;
+}
+
+.aum-modal p {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  color: var(--text-secondary, #6B6560);
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.aum-confirm-warning {
+  color: #E74C3C !important;
+  font-size: 13px !important;
+  margin-bottom: 24px !important;
+}
+
+.aum-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+/* Invite form */
+.aum-invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aum-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.aum-field label {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #6B6560);
+}
+
+.aum-field input,
+.aum-field select {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  color: var(--text-primary, #1C1A17);
+  background: var(--bg-base, #F3F0EB);
+  border: 1.5px solid var(--border-default, #E0DDD6);
+  border-radius: 3px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.aum-field input:focus,
+.aum-field select:focus {
+  border-color: var(--accent, #246B45);
+}
+
+.aum-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  color: var(--text-primary, #1C1A17);
+  cursor: pointer;
+}
+
+.aum-checkbox input { cursor: pointer; }
+
+/* Invite Result */
+.aum-invite-result {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.aum-invite-result__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent, #246B45);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.aum-invite-result p {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  color: var(--text-secondary, #6B6560);
+  margin-bottom: 8px;
+}
+
+.aum-invite-result__pw {
+  font-size: 16px !important;
+  color: var(--text-primary, #1C1A17) !important;
+  margin: 12px 0 !important;
+}
+
+.aum-invite-result__pw code {
+  background: var(--bg-base, #F3F0EB);
+  border: 1px solid var(--border-default, #E0DDD6);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 15px;
+  color: var(--accent, #246B45);
+}
+
+.aum-invite-result__note {
+  font-size: 12px !important;
+  color: #9B948D !important;
+  margin-bottom: 20px !important;
+}
+
+/* Table */
+.aum-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-default, #E0DDD6);
+  border-radius: 4px;
+}
+
+.aum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+}
+
+.aum-table thead tr {
+  background: var(--bg-base, #F3F0EB);
+  border-bottom: 2px solid var(--border-default, #E0DDD6);
+}
+
+.aum-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, #6B6560);
+  white-space: nowrap;
+}
+
+.aum-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle, #EDEAE4);
+  vertical-align: middle;
+}
+
+.aum-table tbody tr:last-child td { border-bottom: none; }
+
+.aum-table tbody tr:hover { background: rgba(36, 107, 69, 0.03); }
+
+.aum-row--inactive td { opacity: 0.55; }
+
+.aum-user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aum-user-name {
+  font-weight: 500;
+  color: var(--text-primary, #1C1A17);
+}
+
+.aum-user-email {
+  font-size: 12px;
+  color: var(--text-secondary, #6B6560);
+}
+
+.aum-dept {
+  color: var(--text-secondary, #6B6560);
+}
+
+.aum-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.aum-badge--admin    { background: #EEF4FF; color: #2B4AC4; }
+.aum-badge--user     { background: var(--bg-base, #F3F0EB); color: var(--text-secondary, #6B6560); }
+.aum-badge--active   { background: #F0FFF4; color: #1d6940; }
+.aum-badge--inactive { background: #FFF0F0; color: #C0392B; }
+
+.aum-leave {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 13px;
+  color: var(--text-primary, #1C1A17);
+}
+
+.aum-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.aum-action-btn {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-default, #E0DDD6);
+  background: transparent;
+  color: var(--text-secondary, #6B6560);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.aum-action-btn:hover {
+  border-color: var(--text-primary, #1C1A17);
+  color: var(--text-primary, #1C1A17);
+}
+
+.aum-action-btn--danger {
+  color: #E74C3C;
+  border-color: #F5C6C6;
+}
+
+.aum-action-btn--danger:hover {
+  background: #E74C3C;
+  color: #fff;
+  border-color: #E74C3C;
+}

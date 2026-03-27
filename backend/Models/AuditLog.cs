@@ -1,48 +1,44 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace VacationRequestApi.Models
 {
-    public enum AuditAction
+    public enum AuditEventType
     {
-        Created,
-        Updated,
-        Deleted,
-        Approved,
-        Rejected,
-        Withdrawn,
-        AttachmentAdded,
-        AttachmentDeleted,
-        CommentAdded
+        Login,
+        LoginFailed,
+        Logout,
+        Register,
+        ProfileCompleted,
+        PasswordChanged,
+        UserCreated,
+        UserUpdated,
+        UserDeleted,
+        VacationRequestCreated,
+        VacationRequestUpdated,
+        VacationRequestApproved,
+        VacationRequestRejected,
+        VacationRequestCancelled,
+        JoinRequestCreated,
+        JoinRequestApproved,
+        JoinRequestRejected,
+        OrganizationCreated,
+        OrganizationUpdated,
+        Unauthorized
     }
 
     public class AuditLog
     {
         public int Id { get; set; }
-
-        public int VacationRequestId { get; set; }
-        public VacationRequest? VacationRequest { get; set; }
-
-        public int UserId { get; set; }
-        public User? User { get; set; }
-
-        [Required]
-        public AuditAction Action { get; set; }
-
-        [MaxLength(1000)]
+        public int? UserId { get; set; }
+        public string? UserEmail { get; set; }
+        public AuditEventType EventType { get; set; }
+        public string? EntityType { get; set; }
+        public int? EntityId { get; set; }
         public string? Details { get; set; }
-
-        [MaxLength(2000)]
-        public string? OldValues { get; set; } // JSON string
-
-        [MaxLength(2000)]
-        public string? NewValues { get; set; } // JSON string
-
-        public DateTime Timestamp { get; set; }
-
-        [MaxLength(45)]
         public string? IpAddress { get; set; }
-
-        [MaxLength(500)]
         public string? UserAgent { get; set; }
+        public bool Success { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation property
+        public User? User { get; set; }
     }
 }

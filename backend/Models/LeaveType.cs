@@ -23,6 +23,9 @@ namespace VacationRequestApi.Models
 
         public int MaxDaysPerYear { get; set; } = 25;
 
+        /// <summary>Minimum working days advance notice required before start date. 0 = no restriction.</summary>
+        public int AdvanceNoticeDays { get; set; } = 0;
+
         public bool IsPaid { get; set; } = true;
 
         public bool IsActive { get; set; } = true;

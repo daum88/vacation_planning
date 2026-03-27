@@ -4,11 +4,12 @@ import { downloadBlob } from '../../utils/fileUtils';
 import { vacationRequestsApi } from '../../api/api';
 import { useToast } from '../Toast/Toast';
 import CommentThread from '../CommentThread/CommentThread';
+import RequestHistory from '../RequestHistory/RequestHistory';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import StatusBadge from '../StatusBadge/StatusBadge';
 import './VacationRequestList.css';
 
-const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, onRefresh, loading }) => {
+const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, onRefresh, loading, isAdmin = false }) => {
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [auditLogs, setAuditLogs] = useState({});
   const [loadingAudit, setLoadingAudit] = useState({});
@@ -359,7 +360,8 @@ const VacationRequestList = ({ requests, onEdit, onDelete, onWithdraw, onRefresh
                     )}
                   </div>
                   <div className="expanded-col">
-                    <CommentThread requestId={request.id} isAdmin={false} />
+                    <CommentThread requestId={request.id} isAdmin={isAdmin} />
+                    <RequestHistory requestId={request.id} />
                   </div>
                 </div>
               </div>

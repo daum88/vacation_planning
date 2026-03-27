@@ -1,17 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using VacationRequestApi.Data;
 using VacationRequestApi.DTOs;
+using VacationRequestApi.Extensions;
 using VacationRequestApi.Models;
 using VacationRequestApi.Services;
+using VacationRequestApi.Utils;
 
 namespace VacationRequestApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class VacationRequestsController : ControllerBase
     {
         private readonly VacationRequestContext _context;
@@ -187,6 +191,45 @@ namespace VacationRequestApi.Controllers
             }
         }
 
+        /// <summary>GET /api/VacationRequests/{id}/history — change log visible to requester and admins</summary>
+        [HttpGet("{id}/history")]
+        public async Task<ActionResult<IEnumerable<RequestHistoryItemDto>>> GetHistory(int id)
+        {
+            try
+            {
+                var userId  = _userService.GetCurrentUserId();
+                var isAdmin = _userService.IsAdmin();
+
+                var req = await _context.VacationRequests.FindAsync(id);
+                if (req == null) return NotFound();
+                if (!isAdmin && req.UserId != userId) return Forbid();
+
+                var items = await _context.RequestHistories
+                    .Include(h => h.Actor)
+                    .Where(h => h.VacationRequestId == id)
+                    .OrderBy(h => h.CreatedAt)
+                    .Select(h => new RequestHistoryItemDto
+                    {
+                        Id          = h.Id,
+                        EventType   = h.EventType,
+                        Description = h.Description,
+                        OldValue    = h.OldValue,
+                        NewValue    = h.NewValue,
+                        ActorName   = h.Actor != null ? h.Actor.FullName : null,
+                        ActorIsAdmin= h.Actor != null && h.Actor.IsAdmin,
+                        CreatedAt   = h.CreatedAt,
+                    })
+                    .ToListAsync();
+
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching history for request {Id}", id);
+                return StatusCode(500, new { message = "Viga ajaloo laadimisel." });
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult<VacationRequestResponseDto>> PostVacationRequest(
             [FromBody] VacationRequestCreateDto dto)
@@ -237,7 +280,7 @@ namespace VacationRequestApi.Controllers
                     }
                 }
 
-                var sanitizedComment = SanitizeInput(dto.Comment);
+                var sanitizedComment = SecurityUtils.SanitizeInput(dto.Comment);
 
                 var leaveType = await _context.LeaveTypes.FindAsync(dto.LeaveTypeId);
                 if (leaveType == null || !leaveType.IsActive)
@@ -246,6 +289,43 @@ namespace VacationRequestApi.Controllers
                 }
 
                 var daysRequested = _publicHolidayService.CountWorkingDays(dto.StartDate.Date, dto.EndDate.Date);
+
+                // ── Advance notice check ─────────────────────────────────
+                if (leaveType.AdvanceNoticeDays > 0)
+                {
+                    var workingDaysUntilStart = _publicHolidayService.CountWorkingDays(DateTime.UtcNow.Date, dto.StartDate.Date.AddDays(-1));
+                    if (workingDaysUntilStart < leaveType.AdvanceNoticeDays)
+                    {
+                        return BadRequest(new
+                        {
+                            message = $"'{leaveType.Name}' nõuab vähemalt {leaveType.AdvanceNoticeDays} tööpäevast etteteatamist. " +
+                                      $"Varaseim võimalik alguskuupäev on rohkem kui {leaveType.AdvanceNoticeDays} tööpäeva tulevikus."
+                        });
+                    }
+                }
+
+                // ── MaxDaysPerYear check ─────────────────────────────────
+                if (leaveType.MaxDaysPerYear > 0)
+                {
+                    var year = dto.StartDate.Year;
+                    var usedThisYear = await _context.VacationRequests
+                        .Where(vr => vr.UserId == userId
+                            && vr.LeaveTypeId == dto.LeaveTypeId
+                            && vr.StartDate.Year == year
+                            && (vr.Status == VacationRequestStatus.Pending || vr.Status == VacationRequestStatus.Approved))
+                        .ToListAsync();
+                    var usedDays = usedThisYear.Sum(vr =>
+                        _publicHolidayService.CountWorkingDays(vr.StartDate.Date, vr.EndDate.Date));
+                    if (usedDays + daysRequested > leaveType.MaxDaysPerYear)
+                    {
+                        return BadRequest(new
+                        {
+                            message = $"'{leaveType.Name}' aastane limiit on {leaveType.MaxDaysPerYear} tööpäeva. " +
+                                      $"Oled juba kasutanud {usedDays} päeva, taotlus ületaks limiiti."
+                        });
+                    }
+                }
+
                 if (user.RemainingLeaveDays < daysRequested && leaveType.IsPaid)
                 {
                     return BadRequest(new
@@ -269,24 +349,30 @@ namespace VacationRequestApi.Controllers
 
                 _context.VacationRequests.Add(vacationRequest);
                 await _context.SaveChangesAsync();
+                await WriteHistory(vacationRequest.Id, userId, "created",
+                    $"Taotlus esitatud: {vacationRequest.StartDate:dd.MM.yyyy}–{vacationRequest.EndDate:dd.MM.yyyy} ({daysRequested} tööpäeva)");
+                await _emailService.SendVacationRequestSubmittedEmailAsync(user.Email, user.FullName, vacationRequest.StartDate, vacationRequest.EndDate);
 
-                await _auditService.LogActionAsync(
-                    vacationRequest.Id,
-                    userId,
-                    AuditAction.Created,
-                    $"Created {leaveType.Name} request for {daysRequested} days",
-                    null,
-                    new { dto.StartDate, dto.EndDate, dto.LeaveTypeId, dto.Comment },
-                    GetIpAddress(),
-                    GetUserAgent()
-                );
-
-                await _emailService.SendRequestSubmittedEmailAsync(vacationRequest.Id, user.FullName, user.Email);
-                
                 if (leaveType.RequiresApproval)
                 {
-                    await _emailService.SendNewRequestNotificationToAdminsAsync(
-                        vacationRequest.Id, user.FullName, dto.StartDate, dto.EndDate);
+                    // In-app notification: add a comment visible to the manager/admins
+                    // so it appears in their notification bell under "my" notifications
+                    var managerId = user.ManagerId;
+                    if (managerId.HasValue)
+                    {
+                        var managerComment = new RequestComment
+                        {
+                            VacationRequestId = vacationRequest.Id,
+                            AuthorUserId      = userId,
+                            Text              = $"Taotlus esitatud kinnitamiseks: {vacationRequest.StartDate:dd.MM.yyyy}–{vacationRequest.EndDate:dd.MM.yyyy} ({daysRequested} tööpäeva).",
+                            IsAdmin           = false,
+                            CreatedAt         = DateTime.UtcNow,
+                        };
+                        _context.RequestComments.Add(managerComment);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    _logger.LogInformation("New vacation request {Id} submitted by {User}", vacationRequest.Id, user.FullName);
                 }
 
                 _logger.LogInformation("Vacation request {Id} created by user {UserId}", vacationRequest.Id, userId);
@@ -358,7 +444,7 @@ namespace VacationRequestApi.Controllers
                 vacationRequest.LeaveTypeId = dto.LeaveTypeId;
                 vacationRequest.StartDate = dto.StartDate.Date;
                 vacationRequest.EndDate = dto.EndDate.Date;
-                vacationRequest.Comment = SanitizeInput(dto.Comment);
+                vacationRequest.Comment = SecurityUtils.SanitizeInput(dto.Comment);
                 vacationRequest.SubstituteName = dto.SubstituteName?.Trim();
                 vacationRequest.UpdatedAt = DateTime.UtcNow;
 
@@ -367,17 +453,6 @@ namespace VacationRequestApi.Controllers
                     await _context.SaveChangesAsync();
 
                     // Audit log
-                    await _auditService.LogActionAsync(
-                        id,
-                        userId,
-                        AuditAction.Updated,
-                        "Request updated",
-                        oldValues,
-                        new { dto.StartDate, dto.EndDate, dto.LeaveTypeId, dto.Comment },
-                        GetIpAddress(),
-                        GetUserAgent()
-                    );
-
                     _logger.LogInformation("Vacation request {Id} updated by user {UserId}", id, userId);
                 }
                 catch (DbUpdateConcurrencyException ex)
@@ -427,18 +502,6 @@ namespace VacationRequestApi.Controllers
 
                 _context.VacationRequests.Remove(vacationRequest);
                 await _context.SaveChangesAsync();
-
-                await _auditService.LogActionAsync(
-                    id,
-                    userId,
-                    AuditAction.Deleted,
-                    "Request deleted",
-                    new { vacationRequest.StartDate, vacationRequest.EndDate, vacationRequest.Status },
-                    null,
-                    GetIpAddress(),
-                    GetUserAgent()
-                );
-
                 _logger.LogInformation("Vacation request {Id} deleted by user {UserId}", id, userId);
 
                 return NoContent();
@@ -482,18 +545,6 @@ namespace VacationRequestApi.Controllers
                 vacationRequest.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
-
-                await _auditService.LogActionAsync(
-                    id,
-                    userId,
-                    AuditAction.Withdrawn,
-                    $"Request withdrawn (was {oldStatus})",
-                    new { Status = oldStatus.ToString() },
-                    new { Status = "Withdrawn" },
-                    GetIpAddress(),
-                    GetUserAgent()
-                );
-
                 _logger.LogInformation("Vacation request {Id} withdrawn by user {UserId}", id, userId);
 
                 return Ok(new { message = "Taotlus tagasi võetud." });
@@ -504,48 +555,6 @@ namespace VacationRequestApi.Controllers
                 return StatusCode(500, new { message = "Viga taotluse tagasivõtmisel." });
             }
         }
-
-        [HttpGet("{id}/audit")]
-        public async Task<ActionResult<IEnumerable<AuditLogDto>>> GetAuditLogs(int id)
-        {
-            try
-            {
-                var userId = _userService.GetCurrentUserId();
-                var isAdmin = _userService.IsAdmin();
-
-                var vacationRequest = await _context.VacationRequests.FindAsync(id);
-                if (vacationRequest == null)
-                {
-                    return NotFound();
-                }
-
-                if (!isAdmin && vacationRequest.UserId != userId)
-                {
-                    return Forbid();
-                }
-
-                var auditLogs = await _auditService.GetAuditLogsForRequestAsync(id);
-
-                var dtos = auditLogs.Select(log => new AuditLogDto
-                {
-                    Id = log.Id,
-                    UserId = log.UserId,
-                    UserName = log.User?.FullName,
-                    Action = log.Action.ToString(),
-                    Details = log.Details,
-                    Timestamp = log.Timestamp,
-                    IpAddress = log.IpAddress
-                }).ToList();
-
-                return Ok(dtos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving audit logs for request {Id}", id);
-                return StatusCode(500, new { message = "Viga auditi logide laadimisel." });
-            }
-        }
-
 
         [HttpGet("admin/all")]
         public async Task<ActionResult<IEnumerable<VacationRequestResponseDto>>> GetAllVacationRequestsAdmin(
@@ -611,29 +620,25 @@ namespace VacationRequestApi.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-
-                await _auditService.LogActionAsync(
-                    id,
-                    adminUserId,
-                    dto.Approved ? AuditAction.Approved : AuditAction.Rejected,
-                    dto.AdminComment,
-                    new { Status = oldStatus.ToString() },
-                    new { Status = vacationRequest.Status.ToString(), AdminComment = dto.AdminComment },
-                    GetIpAddress(),
-                    GetUserAgent()
-                );
-
+                var statusLabel = dto.Approved ? "Kinnitatud" : "Tagasi lükatud";
+                await WriteHistory(vacationRequest.Id, adminUserId, "status_changed",
+                    string.IsNullOrWhiteSpace(dto.AdminComment)
+                        ? statusLabel
+                        : $"{statusLabel}: {dto.AdminComment}",
+                    oldValue: "Ootel", newValue: statusLabel);
                 if (vacationRequest.User != null)
                 {
                     if (dto.Approved)
                     {
-                        await _emailService.SendRequestApprovedEmailAsync(
-                            id, vacationRequest.User.FullName, vacationRequest.User.Email, dto.AdminComment);
+                        await _emailService.SendVacationRequestApprovedEmailAsync(
+                            vacationRequest.User.Email, vacationRequest.User.FullName,
+                            vacationRequest.StartDate, vacationRequest.EndDate, dto.AdminComment);
                     }
                     else
                     {
-                        await _emailService.SendRequestRejectedEmailAsync(
-                            id, vacationRequest.User.FullName, vacationRequest.User.Email, dto.AdminComment);
+                        await _emailService.SendVacationRequestRejectedEmailAsync(
+                            vacationRequest.User.Email, vacationRequest.User.FullName,
+                            vacationRequest.StartDate, vacationRequest.EndDate, dto.AdminComment);
                     }
                 }
 
@@ -714,18 +719,6 @@ namespace VacationRequestApi.Controllers
 
                 _context.VacationRequestAttachments.Add(attachment);
                 await _context.SaveChangesAsync();
-
-                await _auditService.LogActionAsync(
-                    id,
-                    userId,
-                    AuditAction.AttachmentAdded,
-                    $"Uploaded file: {file.FileName}",
-                    null,
-                    new { FileName = file.FileName, FileSize = file.Length },
-                    GetIpAddress(),
-                    GetUserAgent()
-                );
-
                 _logger.LogInformation("Attachment {AttachmentId} uploaded for request {RequestId}", attachment.Id, id);
 
                 var dto = new AttachmentDto
@@ -806,18 +799,6 @@ namespace VacationRequestApi.Controllers
 
                 _context.VacationRequestAttachments.Remove(attachment);
                 await _context.SaveChangesAsync();
-
-                await _auditService.LogActionAsync(
-                    id,
-                    userId,
-                    AuditAction.AttachmentDeleted,
-                    $"Deleted file: {attachment.FileName}",
-                    new { FileName = attachment.FileName },
-                    null,
-                    GetIpAddress(),
-                    GetUserAgent()
-                );
-
                 _logger.LogInformation("Attachment {AttachmentId} deleted from request {RequestId}", attachmentId, id);
 
                 return NoContent();
@@ -1034,18 +1015,12 @@ namespace VacationRequestApi.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-
-                    await _auditService.LogActionAsync(vr.Id, adminUserId,
-                        item.Approved ? AuditAction.Approved : AuditAction.Rejected,
-                        $"Bulk {(item.Approved ? "approved" : "rejected")}: {item.AdminComment}",
-                        null, null, GetIpAddress(), GetUserAgent());
-
                     if (vr.User != null)
                     {
                         if (item.Approved)
-                            await _emailService.SendRequestApprovedEmailAsync(vr.Id, vr.User.FullName, vr.User.Email, item.AdminComment);
+                            await _emailService.SendVacationRequestApprovedEmailAsync(vr.User.Email, vr.User.FullName, vr.StartDate, vr.EndDate, item.AdminComment);
                         else
-                            await _emailService.SendRequestRejectedEmailAsync(vr.Id, vr.User.FullName, vr.User.Email, item.AdminComment);
+                            await _emailService.SendVacationRequestRejectedEmailAsync(vr.User.Email, vr.User.FullName, vr.StartDate, vr.EndDate, item.AdminComment);
                     }
 
                     result.Succeeded++;
@@ -1171,49 +1146,16 @@ namespace VacationRequestApi.Controllers
 
         private VacationRequestResponseDto MapToResponseDto(VacationRequest request, int currentUserId, bool isAdmin)
         {
-            var canEdit = request.Status == VacationRequestStatus.Pending &&
-                         (request.UserId == currentUserId || isAdmin);
-            var canDelete = request.UserId == currentUserId || isAdmin;
+            var canEdit     = request.Status == VacationRequestStatus.Pending &&
+                              (request.UserId == currentUserId || isAdmin);
+            var canDelete   = request.UserId == currentUserId || isAdmin;
             var canWithdraw = request.UserId == currentUserId &&
-                            (request.Status == VacationRequestStatus.Pending ||
-                             request.Status == VacationRequestStatus.Approved);
+                              (request.Status == VacationRequestStatus.Pending ||
+                               request.Status == VacationRequestStatus.Approved);
 
-            return new VacationRequestResponseDto
-            {
-                Id = request.Id,
-                UserId = request.UserId,
-                UserName = request.User?.FullName,
-                UserEmail = request.User?.Email,
-                Department = request.User?.Department,
-                LeaveTypeId = request.LeaveTypeId,
-                LeaveTypeName = request.LeaveType?.Name,
-                LeaveTypeColor = request.LeaveType?.Color,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                Comment = request.Comment,
-                SubstituteName = request.SubstituteName,
-                Status = request.Status.ToString(),
-                ApprovedByUserId = request.ApprovedByUserId,
-                ApprovedByName = request.ApprovedBy?.FullName,
-                ApprovedAt = request.ApprovedAt,
-                AdminComment = request.AdminComment,
-                DaysCount = _publicHolidayService.CountWorkingDays(request.StartDate.Date, request.EndDate.Date),
-                CalendarDaysCount = (request.EndDate.Date - request.StartDate.Date).Days + 1,
-                CreatedAt = request.CreatedAt,
-                UpdatedAt = request.UpdatedAt,
-                Attachments = request.Attachments.Select(a => new AttachmentDto
-                {
-                    Id = a.Id,
-                    FileName = a.FileName,
-                    ContentType = a.ContentType,
-                    FileSize = a.FileSize,
-                    UploadedByUserId = a.UploadedByUserId,
-                    UploadedAt = a.UploadedAt
-                }).ToList(),
-                CanEdit = canEdit,
-                CanDelete = canDelete,
-                CanWithdraw = canWithdraw
-            };
+            var daysCount = _publicHolidayService.CountWorkingDays(request.StartDate.Date, request.EndDate.Date);
+
+            return request.ToDto(daysCount, canEdit, canDelete, canWithdraw);
         }
 
         private string? ValidateDates(DateTime startDate, DateTime endDate, int userId, int? excludeRequestId = null)
@@ -1256,22 +1198,6 @@ namespace VacationRequestApi.Controllers
             }
 
             return await query.AnyAsync();
-        }
-
-        private static string? SanitizeInput(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return null;
-            }
-
-            var sanitized = input.Trim();
-            sanitized = Regex.Replace(sanitized, @"<script[^>]*>.*?</script>", "", RegexOptions.IgnoreCase);
-            sanitized = Regex.Replace(sanitized, @"<iframe[^>]*>.*?</iframe>", "", RegexOptions.IgnoreCase);
-            sanitized = Regex.Replace(sanitized, @"javascript:", "", RegexOptions.IgnoreCase);
-            sanitized = Regex.Replace(sanitized, @"on\w+\s*=", "", RegexOptions.IgnoreCase);
-
-            return sanitized;
         }
 
         private static IEnumerable<DateTime> GetMonthsSpanned(DateTime startDate, DateTime endDate)
@@ -1343,6 +1269,22 @@ namespace VacationRequestApi.Controllers
                 ical.Append(BuildVEvent(req, $"vacation-{req.Id}@vacationapp.local"));
             ical.AppendLine("END:VCALENDAR");
             return ical.ToString();
+        }
+
+        private async Task WriteHistory(int requestId, int? actorId, string eventType, string description,
+            string? oldValue = null, string? newValue = null)
+        {
+            _context.RequestHistories.Add(new RequestHistory
+            {
+                VacationRequestId = requestId,
+                ActorUserId       = actorId,
+                EventType         = eventType,
+                Description       = description,
+                OldValue          = oldValue,
+                NewValue          = newValue,
+                CreatedAt         = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync();
         }
     }
 }

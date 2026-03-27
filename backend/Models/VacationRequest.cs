@@ -55,6 +55,5 @@ namespace VacationRequestApi.Models
 
         // Navigation properties
         public ICollection<VacationRequestAttachment> Attachments { get; set; } = new List<VacationRequestAttachment>();
-        public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     }
 }

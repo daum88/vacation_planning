@@ -1,13 +1,33 @@
+/* StatusBadge — dot + uppercase + tight border */
 .sb-badge {
-  display: inline-block;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 10px;
   font-weight: 700;
-  padding: 3px 7px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid transparent;
   white-space: nowrap;
+  line-height: 1.5;
 }
 
-.sb-pending   { background: #fff8ec; color: #9a5a00; border: 1px solid #f5dba0; }
-.sb-approved  { background: #edfaf3; color: #1e6b3f; border: 1px solid #a8e0be; }
-.sb-rejected  { background: #fff0f0; color: #9a1f1f; border: 1px solid #f5a0a0; }
-.sb-withdrawn { background: #f5f5f7; color: #6e6e73; border: 1px solid #e0e0e2; }
+/* Dot indicator */
+.sb-badge::before {
+  content: '';
+  display: block;
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.sb-pending   { background: var(--color-pending-bg);   color: var(--color-pending-text);   border-color: var(--color-pending-border); }
+.sb-approved  { background: var(--color-approved-bg);  color: var(--color-approved-text);  border-color: var(--color-approved-border); }
+.sb-rejected  { background: var(--color-rejected-bg);  color: var(--color-rejected-text);  border-color: var(--color-rejected-border); }
+.sb-withdrawn { background: var(--color-withdrawn-bg); color: var(--color-withdrawn-text); border-color: var(--color-withdrawn-border); }

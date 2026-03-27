@@ -1,32 +1,55 @@
+using System.Security.Claims;
+
 namespace VacationRequestApi.Services
 {
     public interface IUserService
     {
         int GetCurrentUserId();
         bool IsAdmin();
+        string? GetCurrentUserEmail();
+        string? GetCurrentUserDepartment();
     }
 
     public class UserService : IUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly Data.VacationRequestContext _context;
 
-        public UserService(IHttpContextAccessor httpContextAccessor, Data.VacationRequestContext context)
+        public UserService(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
-            _context = context;
         }
 
         public int GetCurrentUserId()
         {
-            var param = _httpContextAccessor.HttpContext?.Request.Query["userId"].FirstOrDefault();
-            return (!string.IsNullOrEmpty(param) && int.TryParse(param, out int id)) ? id : 1;
+            var userIdClaim = _httpContextAccessor.HttpContext?.User
+                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                return userId;
+            }
+
+            throw new UnauthorizedAccessException("User not authenticated");
         }
 
         public bool IsAdmin()
         {
-            var userId = GetCurrentUserId();
-            return _context.Users.Find(userId)?.IsAdmin ?? false;
+            var roleClaim = _httpContextAccessor.HttpContext?.User
+                .FindFirst(ClaimTypes.Role)?.Value;
+            
+            return roleClaim == "Admin";
+        }
+
+        public string? GetCurrentUserEmail()
+        {
+            return _httpContextAccessor.HttpContext?.User
+                .FindFirst(ClaimTypes.Email)?.Value;
+        }
+
+        public string? GetCurrentUserDepartment()
+        {
+            return _httpContextAccessor.HttpContext?.User
+                .FindFirst("Department")?.Value;
         }
     }
 }

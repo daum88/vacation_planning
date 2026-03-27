@@ -1,0 +1,362 @@
+.jrm-container { padding: 0; }
+
+.jrm-loading {
+  padding: 40px;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  color: var(--text-secondary, #6B6560);
+}
+
+.jrm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.jrm-title {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #1C1A17);
+  margin: 0;
+}
+
+.jrm-badge-pending {
+  background: #FFF3CD;
+  color: #856404;
+  border: 1px solid #FFEAA7;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.jrm-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+}
+
+.jrm-alert--error  { background: #FFF0F0; border: 1px solid #F5C6C6; color: #C0392B; }
+.jrm-alert--success { background: #F0FFF4; border: 1px solid #B7DEC8; color: #1d6940; }
+
+.jrm-alert button {
+  background: none; border: none; cursor: pointer; font-size: 18px;
+  color: inherit; opacity: 0.6; margin-left: 8px;
+}
+.jrm-alert button:hover { opacity: 1; }
+
+/* Modal */
+.jrm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.jrm-modal {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-default, #E0DDD6);
+  border-radius: 4px;
+  padding: 32px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.jrm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.jrm-modal-header h3 {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1C1A17);
+  margin: 0;
+}
+
+.jrm-modal-header button {
+  background: none; border: none; font-size: 22px;
+  cursor: pointer; color: var(--text-secondary, #6B6560);
+}
+
+.jrm-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  background: var(--bg-base, #F3F0EB);
+  border-radius: 3px;
+  margin-bottom: 20px;
+}
+
+.jrm-modal-user {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-weight: 600;
+  color: var(--text-primary, #1C1A17);
+  font-size: 15px;
+}
+
+.jrm-modal-email, .jrm-modal-org {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+  color: var(--text-secondary, #6B6560);
+}
+
+.jrm-modal-message {
+  margin-bottom: 20px;
+}
+
+.jrm-modal-message label {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #6B6560);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.jrm-modal-message p {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  color: var(--text-primary, #1C1A17);
+  font-style: italic;
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--bg-base, #F3F0EB);
+  border-left: 3px solid var(--accent, #246B45);
+  border-radius: 0 3px 3px 0;
+}
+
+.jrm-review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.jrm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.jrm-field label {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #6B6560);
+}
+
+.jrm-required { color: #E74C3C; }
+
+.jrm-field input,
+.jrm-field textarea {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  color: var(--text-primary, #1C1A17);
+  background: var(--bg-base, #F3F0EB);
+  border: 1.5px solid var(--border-default, #E0DDD6);
+  border-radius: 3px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+
+.jrm-field input:focus,
+.jrm-field textarea:focus {
+  border-color: var(--accent, #246B45);
+}
+
+.jrm-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* Buttons */
+.jrm-btn {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 8px 16px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.jrm-btn--approve { background: var(--accent, #246B45); color: #fff; }
+.jrm-btn--approve:hover:not(:disabled) { background: #1d5737; }
+
+.jrm-btn--reject { background: #E74C3C; color: #fff; }
+.jrm-btn--reject:hover:not(:disabled) { background: #c0392b; }
+
+.jrm-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary, #6B6560);
+  border: 1.5px solid var(--border-default, #E0DDD6);
+}
+.jrm-btn--ghost:hover { border-color: var(--text-secondary, #6B6560); }
+.jrm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Sections */
+.jrm-section { margin-bottom: 32px; }
+
+.jrm-section-title {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary, #6B6560);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 14px;
+}
+
+.jrm-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary, #6B6560);
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 14px;
+  border: 1px dashed var(--border-default, #E0DDD6);
+  border-radius: 4px;
+}
+
+/* Cards for pending */
+.jrm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jrm-card {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-default, #E0DDD6);
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+
+.jrm-card--pending {
+  border-left: 3px solid #F5A623;
+}
+
+.jrm-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.jrm-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.jrm-user-name {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary, #1C1A17);
+}
+
+.jrm-user-email, .jrm-org {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+  color: var(--text-secondary, #6B6560);
+}
+
+.jrm-message {
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+  color: var(--text-secondary, #6B6560);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.jrm-date {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 12px;
+  color: var(--text-secondary, #6B6560);
+  white-space: nowrap;
+}
+
+.jrm-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Table */
+.jrm-table-wrap {
+  border: 1px solid var(--border-default, #E0DDD6);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.jrm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+  font-size: 13px;
+}
+
+.jrm-table thead tr {
+  background: var(--bg-base, #F3F0EB);
+  border-bottom: 2px solid var(--border-default, #E0DDD6);
+}
+
+.jrm-table th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, #6B6560);
+}
+
+.jrm-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle, #EDEAE4);
+  color: var(--text-primary, #1C1A17);
+}
+
+.jrm-table tbody tr:last-child td { border-bottom: none; }
+.jrm-table tbody tr:hover { background: rgba(36, 107, 69, 0.02); }
+
+.jrm-cell-user { display: flex; flex-direction: column; gap: 2px; }
+.jrm-cell-email { font-size: 12px; color: var(--text-secondary, #6B6560); }
+
+.jrm-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.jrm-status--approved { background: #F0FFF4; color: #1d6940; }
+.jrm-status--rejected { background: #FFF0F0; color: #C0392B; }
+.jrm-status--pending  { background: #FFF3CD; color: #856404; }

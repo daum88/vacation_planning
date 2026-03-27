@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VacationRequestApi.Data;
 using VacationRequestApi.DTOs;
+using VacationRequestApi.Extensions;
 using VacationRequestApi.Models;
+using VacationRequestApi.Services;
 
 namespace VacationRequestApi.Controllers
 {
@@ -12,11 +14,16 @@ namespace VacationRequestApi.Controllers
     {
         private readonly VacationRequestContext _context;
         private readonly ILogger<UsersController> _logger;
+        private readonly IUserService _userService;
 
-        public UsersController(VacationRequestContext context, ILogger<UsersController> logger)
+        public UsersController(
+            VacationRequestContext context, 
+            ILogger<UsersController> logger,
+            IUserService userService)
         {
             _context = context;
             _logger = logger;
+            _userService = userService;
         }
 
         // GET: api/Users
@@ -77,9 +84,17 @@ namespace VacationRequestApi.Controllers
 
         // GET: api/Users/current
         [HttpGet("current")]
-        public async Task<ActionResult<UserDto>> GetCurrentUser([FromQuery] int userId = 1)
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            return await GetUser(userId);
+            try
+            {
+                var userId = _userService.GetCurrentUserId();
+                return await GetUser(userId);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { message = "Kasutaja pole autenditud." });
+            }
         }
 
         // GET: api/Users/5/balance
@@ -127,28 +142,8 @@ namespace VacationRequestApi.Controllers
             }
         }
 
-        private static UserDto MapToDto(User user)
-        {
-            return new UserDto
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                FullName = user.FullName,
-                Email = user.Email,
-                Department = user.Department,
-                Position = user.Position,
-                ManagerId = user.ManagerId,
-                ManagerName = user.Manager?.FullName,
-                IsActive = user.IsActive,
-                IsAdmin = user.IsAdmin,
-                AnnualLeaveDays = user.AnnualLeaveDays,
-                UsedLeaveDays = user.UsedLeaveDays,
-                CarryOverDays = user.CarryOverDays,
-                RemainingLeaveDays = user.RemainingLeaveDays,
-                HireDate = user.HireDate
-            };
-        }
+        // MapToDto replaced by MappingExtensions.ToDto() — kept as forwarding shim
+        private static UserDto MapToDto(User user) => user.ToDto();
 
         // PUT: api/Users/5/carryover
         [HttpPut("{id}/carryover")]
